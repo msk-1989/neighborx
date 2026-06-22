@@ -1,11 +1,10 @@
 import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+import { pathToFileURL } from "node:url";
 
 const AV = (seed: string) =>
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1f4e0,ffd5dc,ffdfbf`;
 
-async function main() {
+export async function runSeed(db: PrismaClient) {
   console.log("🌱 Seeding NeighborX...");
 
   // ----- Users -----
@@ -188,9 +187,19 @@ async function main() {
   console.log("✅ Seed complete");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => db.$disconnect());
+// Auto-run only when executed directly as a script (bun prisma/seed.ts).
+// When imported by src/lib/db.ts for serverless cold-start seeding, this guard
+// is false and runSeed is invoked explicitly with a PrismaClient instance.
+const isMain =
+  typeof process !== "undefined" &&
+  import.meta.url === pathToFileURL(process.argv[1] || "").href;
+
+if (isMain) {
+  const db = new PrismaClient();
+  runSeed(db)
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(() => db.$disconnect());
+}

@@ -1,0 +1,28 @@
+# Keep the Vercel build context lean — exclude everything that isn't needed
+# to build & run the Next.js app.
+
+# Local SQLite DB (Vercel uses /tmp at runtime instead)
+db/
+prisma/*.db
+prisma/*.db-journal
+
+# Separate sidecar services (socket.io chat runs only in the local sandbox)
+mini-services/
+
+# Reference / scaffold folders not part of the app
+examples/
+skills/
+download/
+
+# Build artifacts & deps (Vercel ignores these by default, but be explicit)
+.next/
+node_modules/
+
+# Logs
+*.log
+
+# Local screenshots
+*.png
+
+# Vercel local state
+.vercel/

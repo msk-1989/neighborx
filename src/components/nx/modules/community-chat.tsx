@@ -25,16 +25,20 @@ export function CommunityChat({ user }: { user: User }) {
   const [input, setInput] = React.useState("");
   const [presence, setPresence] = React.useState(0);
   const [connected, setConnected] = React.useState(false);
+  const [demoMode, setDemoMode] = React.useState(false);
   const [loading, setLoading] = useState(true);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const socketRef = React.useRef<Socket | null>(null);
+  const seenIds = React.useRef<Set<string>>(new Set());
 
   // load history from DB
   React.useEffect(() => {
     setLoading(true);
+    seenIds.current = new Set();
     (async () => {
       try {
         const msgs = await api<ChatMessage[]>(`/api/chat?room=${room}`);
+        for (const m of msgs) seenIds.current.add(m.id);
         setMessages(msgs);
       } finally {
         setLoading(false);
@@ -42,33 +46,101 @@ export function CommunityChat({ user }: { user: User }) {
     })();
   }, [room]);
 
-  // connect socket
+  // connect socket (with graceful degradation — falls back to HTTP polling)
   React.useEffect(() => {
-    const socket = io("/?XTransformPort=3003", { query: { roomId: room }, transports: ["websocket", "polling"] });
+    let demoTimer: ReturnType<typeof setTimeout> | undefined;
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
+
+    const socket = io("/?XTransformPort=3003", {
+      query: { roomId: room },
+      transports: ["websocket", "polling"],
+      timeout: 4000,
+      reconnectionAttempts: 2,
+    });
     socketRef.current = socket;
-    socket.on("connect", () => setConnected(true));
+
+    socket.on("connect", () => {
+      setConnected(true);
+      setDemoMode(false);
+      if (demoTimer) clearTimeout(demoTimer);
+    });
     socket.on("disconnect", () => setConnected(false));
     socket.on("message", (m: ChatMessage) => {
+      if (seenIds.current.has(m.id)) return;
+      seenIds.current.add(m.id);
       setMessages((prev) => [...prev, m]);
     });
     socket.on("presence", (p: { count: number }) => setPresence(p.count));
-    return () => { socket.disconnect(); };
+
+    // If the socket can't connect within 4s (e.g. on Vercel where the
+    // socket.io mini-service isn't running), switch to demo/polling mode so
+    // the chat still works over HTTP.
+    demoTimer = setTimeout(() => {
+      if (!socket.connected) {
+        setDemoMode(true);
+        setConnected(false);
+        // Poll the history endpoint every 4s and merge any new messages.
+        pollTimer = setInterval(async () => {
+          try {
+            const msgs = await api<ChatMessage[]>(`/api/chat?room=${room}`);
+            const fresh = msgs.filter((m) => !seenIds.current.has(m.id));
+            if (fresh.length > 0) {
+              for (const m of fresh) seenIds.current.add(m.id);
+              setMessages((prev) => [...prev, ...fresh]);
+            }
+          } catch {
+            /* ignore transient poll errors */
+          }
+        }, 4000);
+      }
+    }, 4000);
+
+    return () => {
+      if (demoTimer) clearTimeout(demoTimer);
+      if (pollTimer) clearInterval(pollTimer);
+      socket.disconnect();
+    };
   }, [room]);
 
   React.useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  function send() {
+  async function send() {
     const text = input.trim();
-    if (!text || !socketRef.current) return;
-    socketRef.current.emit("message", {
-      roomId: room,
-      senderId: user.id,
-      senderName: user.name,
-      text,
-    });
+    if (!text) return;
     setInput("");
+
+    // Always persist via HTTP (works everywhere). On the local sandbox we
+    // ALSO emit via socket for instant broadcast.
+    try {
+      const saved = await api<ChatMessage>("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          roomId: room,
+          senderId: user.id,
+          senderName: user.name,
+          text,
+        }),
+      });
+      if (!seenIds.current.has(saved.id)) {
+        seenIds.current.add(saved.id);
+        setMessages((prev) => [...prev, saved]);
+      }
+    } catch {
+      // network error — re-populate the input so the user doesn't lose text
+      setInput(text);
+      return;
+    }
+
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("message", {
+        roomId: room,
+        senderId: user.id,
+        senderName: user.name,
+        text,
+      });
+    }
   }
 
   return (
@@ -84,7 +156,7 @@ export function CommunityChat({ user }: { user: User }) {
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Circle className={cn("h-2 w-2", connected ? "fill-primary text-primary" : "fill-muted-foreground")} /> {connected ? "Live" : "Connecting"}</span>
+            <span className="flex items-center gap-1"><Circle className={cn("h-2 w-2", connected ? "fill-primary text-primary" : "fill-muted-foreground")} /> {connected ? "Live" : demoMode ? "Saved (demo)" : "Connecting"}</span>
             <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {presence} online</span>
           </div>
         </div>
@@ -124,14 +196,14 @@ export function CommunityChat({ user }: { user: User }) {
                   {showAvatar && (
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={m.sender?.avatar || undefined} />
-                      <AvatarFallback className="text-[10px] bg-primary/15 text-primary">{m.senderName?.split(" ").map((s) => s[0]).slice(0, 2).join("") || "?"}</AvatarFallback>
+                      <AvatarFallback className="text-[10px] bg-primary/15 text-primary">{(m.senderName || m.sender?.name || "?").split(" ").map((s) => s[0]).slice(0, 2).join("") || "?"}</AvatarFallback>
                     </Avatar>
                   )}
                 </div>
                 <div className={cn("max-w-[75%]", mine && "items-end flex flex-col")}>
                   {showAvatar && (
                     <div className={cn("mb-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground", mine && "flex-row-reverse")}>
-                      <span className="font-medium text-foreground">{mine ? "You" : m.senderName}</span>
+                      <span className="font-medium text-foreground">{mine ? "You" : (m.senderName || m.sender?.name || "Neighbor")}</span>
                     </div>
                   )}
                   <div className={cn(
@@ -160,7 +232,9 @@ export function CommunityChat({ user }: { user: User }) {
         </div>
       </Card>
       <div className="mt-2 text-center text-[11px] text-muted-foreground">
-        Real-time neighborhood chat · powered by socket.io · be kind & respectful 🙏
+        {demoMode
+          ? "Demo mode · messages are saved but live broadcast needs the chat service (local sandbox)."
+          : "Real-time neighborhood chat · powered by socket.io · be kind & respectful 🙏"}
       </div>
     </div>
   );

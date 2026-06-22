@@ -3,6 +3,9 @@ import { AppShell } from "@/components/nx/app-shell";
 import type { User } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+// The first request after a Vercel cold start bootstraps the /tmp SQLite DB
+// (apply schema + run seed). Give the serverless function enough headroom.
+export const maxDuration = 60;
 
 export default async function Page() {
   // default demo user = Arjun Deshmukh
