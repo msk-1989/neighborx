@@ -1,13 +1,15 @@
 // NeighborX — Hyperlocal Community & Commerce Super App
-// SQLite-backed schema (no enums / no arrays — use String with documented values)
+// PostgreSQL-backed schema (Neon serverless). Uses String for enum-like
+// fields (no native PG enums) and no arrays — keeps the schema portable.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
