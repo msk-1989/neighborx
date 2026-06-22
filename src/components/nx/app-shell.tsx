@@ -43,8 +43,10 @@ export function AppShell({ user }: { user: User }) {
     <div className="flex min-h-screen-dvh flex-col bg-background">
       <Header user={user} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1">
-        {/* desktop sidebar */}
-        <aside className="sticky top-14 hidden h-aside-dvh w-64 shrink-0 border-r lg:block lg:top-16">
+        {/* desktop sidebar — self-start + max-h so it never overflows into the footer;
+            sticky keeps it pinned while the flex row is in view, then it scrolls away
+            cleanly when the footer comes into view (no overlap). */}
+        <aside className="sticky top-14 hidden max-h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start overflow-hidden border-r lg:block lg:top-16 lg:max-h-[calc(100dvh-4rem)]">
           <Sidebar />
         </aside>
 
