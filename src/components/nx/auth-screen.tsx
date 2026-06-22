@@ -58,7 +58,13 @@ const DEMO_USERS = [
   { email: "vijay@nx.in", name: "Vijay More", role: "🏠 RESIDENT" },
 ];
 
-export function AuthScreen({ onAuthenticated }: { onAuthenticated?: (user: User) => void }) {
+export function AuthScreen({
+  onAuthenticated,
+  onBack,
+}: {
+  onAuthenticated?: (user: User) => void;
+  onBack?: () => void;
+}) {
   const [mode, setMode] = React.useState<Mode>("login");
   const [step, setStep] = React.useState<Step>("form");
   const [email, setEmail] = React.useState("");
@@ -201,10 +207,27 @@ export function AuthScreen({ onAuthenticated }: { onAuthenticated?: (user: User)
       {/* Top brand bar */}
       <header className="border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Logo />
-          <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-            <span>OTP-secured · No passwords</span>
+          <button
+            onClick={onBack}
+            className="tap-feedback flex items-center gap-2 rounded-lg transition-opacity hover:opacity-80"
+          >
+            <Logo />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>OTP-secured · No passwords</span>
+            </div>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="tap-feedback inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Back to home</span>
+                <span className="sm:hidden">Home</span>
+              </button>
+            )}
           </div>
         </div>
       </header>

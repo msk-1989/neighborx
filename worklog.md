@@ -586,3 +586,63 @@ Stage Summary:
 - All 3 core flows browser-verified end-to-end (login, logout, register) + 2 error cases (wrong OTP, non-existent email).
 - Demo OTP is returned in the API response and displayed in a green box on the OTP step — in production this would be sent via SMS/email and NOT returned.
 - Lint clean. No existing functionality broken — Admin Panel, sidebar, footer, all modules still work as before.
+
+---
+Task ID: 11-marketing-website
+Agent: orchestrator (Z.ai Code)
+Task: Build a public marketing website for NeighborX (user: "we should have its website as well")
+
+Work Log:
+- User wanted a proper public marketing website — not just the auth screen that appeared when logged out. Previously, visiting `/` without a session showed only the AuthScreen (login/register form). Now `/` shows a full marketing landing page with CTAs that open the auth flow.
+
+- Created `/home/z/my-project/src/components/nx/landing-page.tsx` (~520 lines, "use client"):
+  A comprehensive marketing website with 9 sections:
+  1. **Sticky header** — Logo + desktop nav (Features, How it works, For You, Pricing, FAQ) + Login/Get Started CTAs. Mobile hamburger menu. Background blur on scroll.
+  2. **Hero** — "Your Neighborhood. Built on Trust." headline + subhead + 2 CTAs + trust badges (OTP, verification, free). Right side: app preview mockup card showing a mini feed (SOS alert, community post, marketplace listing) with a floating "100% Verified" badge. Background gradient blobs (emerald + amber). Trust stats row (12K+ neighbors, 850+ businesses, 120+ societies, 15+ cities).
+  3. **Features grid** — 12 feature cards (Community Feed, Real-time Chat, Marketplace, Services, Local Jobs, Emergency SOS, Neighborhood Watch, Verified Businesses, Reputation & Rewards, Events, Lost & Found, 5-Level Verification) each with colored icon + title + description. Plus a "Coming soon" roadmap teaser with 6 Phase 3-4 features (Property, Society Management, Fundraising, Carpool, Skill Exchange, Hyperlocal Commerce).
+  4. **How it works** — 3-step process (Register with OTP → Verify identity → Connect & thrive) with gradient icon circles and connector lines.
+  5. **For You** — 4 role-based cards (For Residents / Businesses / Service Providers / Employers) each with a gradient header, tagline, and 5 bullet points. Colors: emerald, amber, purple, rose.
+  6. **Safety spotlight** — Full-width gradient section showcasing Emergency SOS with a live SOS alert mockup card (location, broadcast count, responder avatars). Lists SOS, Neighborhood Watch, and Volunteer Network.
+  7. **Testimonials** — 6 quotes from demo users (Priya, Ravi, Anita, Vijay, Mahesh, Sneha) with star ratings, avatars, and roles.
+  8. **Pricing** — 3 tiers (Free ₹0, Business Pro ₹499/mo with "Most popular" badge, Service Pro ₹299/mo) each with icon, price, feature list with checkmarks.
+  9. **FAQ** — 8-item accordion (Is it free? How does verification work? Is my data safe? Which cities? vs WhatsApp? For my society? Community Hero? How does SOS work?).
+  10. **Final CTA** — Full-width brand-gradient banner "Join your neighborhood today" with 2 CTAs + stats.
+  11. **Footer** — reuses the existing Footer component.
+  All sections fully responsive (mobile-first), with smooth-scroll nav, tap-feedback on interactive elements, and consistent emerald+amber brand palette.
+
+- Created `/home/z/my-project/src/components/nx/public-site.tsx` (~25 lines, "use client"):
+  Client wrapper holding `view: "landing" | "auth"` state. Renders LandingPage by default; when any CTA (Login/Get Started) is clicked, switches to AuthScreen with an `onBack` callback. AuthScreen's existing `onAuthenticated` → window.location.reload() picks up the session cookie and renders AppShell.
+
+- Updated `/home/z/my-project/src/components/nx/auth-screen.tsx`:
+  - Added `onBack?: () => void` prop.
+  - Logo in the header is now clickable (calls onBack to return to landing).
+  - Added a "Back to home" button in the header (icon + text, responsive label).
+  - Only shows the back button when onBack is provided (i.e., when accessed from the landing page).
+
+- Updated `/home/z/my-project/src/app/page.tsx`:
+  - Replaced `import { AuthScreen }` with `import { PublicSite }`.
+  - `if (!user) return <PublicSite />` instead of `<AuthScreen />`.
+  - No other changes — session → AppShell flow unchanged.
+
+- Verification (browser-tested end-to-end via agent-browser @ 1440x900 + 390x844):
+  1. **Landing page renders** — sticky header with logo + nav + Login/Get Started, hero with headline + app preview mockup + trust stats, all visible. VLM confirmed: "sticky header with NeighborX logo and Login/Get Started buttons", "large headline 'Your Neighborhood. Built on Trust.'", "app preview mockup on the right with SOS alert and posts", "trust stats visible". ✅
+  2. **Features section** — 12 feature cards render cleanly with icons + descriptions. VLM: "clean and professional, structured grid with consistent spacing". ✅
+  3. **For You section** — 4 role-based cards (Residents/Businesses/Service Providers/Employers) with gradient headers. VLM: "renders cleanly, distinct colored cards and clear text". ✅
+  4. **Testimonials** — 6 quote cards with ratings + avatars. VLM: "renders cleanly, organized cards and readable text". ✅
+  5. **CTA flow** — Clicked "Get Started" in header → AuthScreen opened with "Back to home" button. ✅
+  6. **Back button** — Clicked "Back to home" → returned to landing page. ✅
+  7. **Full login from landing** — Clicked "Login" → AuthScreen → clicked Arjun demo → sent OTP → filled code → clicked Login → success toast → page reloaded → AppShell rendered with sidebar + header + dashboard. ✅
+  8. **Mobile responsive** — 390px viewport: header compact with hamburger, hero headline readable, single column, full-width CTAs. VLM confirmed all. ✅
+  9. **Logout** — from the app, clicked Sign out → back to landing page. ✅
+
+- `bun run lint` — clean (0 errors, 0 warnings).
+- Dev log shows all routes returning 200. No runtime errors.
+
+Stage Summary:
+- Full public marketing website live at `/` — replaces the bare AuthScreen that used to show when logged out.
+- 9-section landing page: sticky header, hero with app mockup, trust stats, 12-feature grid + roadmap, 3-step how-it-works, 4 role-based cards, safety spotlight with SOS mockup, 6 testimonials, 3-tier pricing, 8-item FAQ accordion, final CTA banner, footer.
+- PublicSite wrapper toggles between LandingPage and AuthScreen via client state — no route change needed (everything stays on `/`).
+- AuthScreen now has a "Back to home" button + clickable logo.
+- Fully responsive (mobile hamburger menu, single-column on mobile, full-width CTAs).
+- All 3 flows verified: landing → CTA → auth → login → app, landing → CTA → back → landing, app → logout → landing.
+- Lint clean. No existing functionality broken — login/register/logout all still work as before.

@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/nx/app-shell";
-import { AuthScreen } from "@/components/nx/auth-screen";
+import { PublicSite } from "@/components/nx/public-site";
 import { getSessionUser } from "@/lib/auth";
 import type { User } from "@/lib/types";
 
@@ -9,11 +9,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export default async function Page() {
-  // Read session cookie → if no session, show the AuthScreen (login/register/OTP).
+  // Read session cookie → if no session, show the public marketing site
+  // (landing page + auth flow). If session exists, show the full app.
   const user = await getSessionUser();
 
   if (!user) {
-    return <AuthScreen />;
+    return <PublicSite />;
   }
 
   // serialize dates to strings for client
