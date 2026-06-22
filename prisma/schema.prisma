@@ -622,3 +622,17 @@ model Category {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 }
+
+// OTP codes for passwordless login/register — expires in 10 minutes
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  // purpose: LOGIN | REGISTER
+  purpose   String   @default("LOGIN")
+  consumed  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}

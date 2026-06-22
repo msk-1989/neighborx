@@ -517,3 +517,72 @@ Stage Summary:
 - Dev server now running stably with the new orphaned-subshell launch pattern (PID 28534 → next-server PID 28547, both reparented to init).
 - Lint clean. All APIs responding 200.
 - No new code changes were needed in this session — pure verification pass.
+
+---
+Task ID: 10-auth-login-logout
+Agent: orchestrator (Z.ai Code)
+Task: Build proper login/register/logout auth flow (user reported "still no login logout we have")
+
+Work Log:
+- Explored current state: page.tsx was hardcoding Arjun (arjun@nx.in) as the auto-logged-in demo user; Header had a placeholder "Switch demo user" item that just showed a toast; no auth API existed at all.
+- Designed passwordless OTP-based auth (no passwords — cleaner for a demo, matches Indian app patterns like WhatsApp/Swiggy OTP login).
+
+- Prisma schema: Added `OtpCode` model (id, email, code, purpose LOGIN|REGISTER, consumed, expiresAt, createdAt) with @@index on [email, createdAt]. Ran `prisma db push` to sync.
+
+- Created `/home/z/my-project/src/lib/auth.ts`:
+  - SESSION_COOKIE = "nx_session" (HTTP-only, sameSite=lax, 30-day maxAge)
+  - generateOtp() — 6-digit cryptographically-random code via Web Crypto
+  - getSessionUid() / setSession(uid) / clearSession() / getSessionUser() — cookie-based session helpers using next/headers
+
+- Built 4 auth API routes under `/home/z/my-project/src/app/api/auth/`:
+  1. `send-otp/route.ts` (POST) — body: {email, mode: "login"|"register", name?, phone?, role?}. Validates email format. For login: verifies user exists (404 if not). For register: verifies email is free (409 if taken) + validates name (≥2 chars) + phone (10 digits). Invalidates previous unconsumed OTPs for the email, generates a new 6-digit code, stores it with 10-min TTL. Returns `{ok, mode, email, expiresIn, demoOtp}` — the demoOtp field returns the code in the response body so the UI can display it (NO real SMS/email gateway in this demo).
+  2. `verify-otp/route.ts` (POST) — body: {email, code, mode, name?, phone?, role?}. Finds the most recent unconsumed OTP matching email+code. Returns 400 if not found, 400 if expired (also marks consumed), 400 if purpose mismatch. On success: marks OTP consumed, then for LOGIN fetches the user, for REGISTER creates the user (with the chosen role, verifyMobile=true, 10 welcome reward points) and calls assignRole() to grant the matching IAM role. Sets the session cookie via setSession(uid). Returns {ok, user}.
+  3. `logout/route.ts` (POST) — clears the session cookie. Returns {ok}.
+  4. `session/route.ts` (GET) — returns the current user from the session cookie or {user: null}.
+
+- Built `/home/z/my-project/src/components/nx/auth-screen.tsx` (~330 lines, "use client"):
+  - Full-screen auth UI with a 2-column layout: left = marketing (headline "Your Neighborhood. Built on Trust.", feature bullets, 6 demo-account quick-fill buttons); right = auth card.
+  - Mode toggle: Login ↔ Register.
+  - LOGIN form: email field only → "Send login OTP".
+  - REGISTER form: full name, phone (10 digits, numeric only), role Select (RESIDENT/BUSINESS_OWNER/SERVICE_PROVIDER/EMPLOYER with emoji + description), email → "Send registration OTP".
+  - OTP step: 6-slot InputOTP component (3+3 with separator), green dashed demo-OTP display box showing the code, 30-second resend countdown, "Back" button to return to form.
+  - 6 demo-account quick-fill buttons (Arjun/SUPER_ADMIN, Priya/SOCIETY_ADMIN, Ravi/BUSINESS_OWNER, Anita/SERVICE_PROVIDER, Mahesh/EMPLOYER, Vijay/RESIDENT) — clicking fills the email field.
+  - All API errors parsed via parseApiError() helper that extracts the {error:"..."} JSON from the api() wrapper's "API <status>: <body>" throw format.
+  - On successful auth: shows success toast, then window.location.reload() after 800ms — the server reads the new session cookie and renders <AppShell>.
+  - Sticky footer at bottom: "© 2026 NeighborX · Made for India 🇮🇳 · OTP-based passwordless auth".
+
+- Updated `/home/z/my-project/src/app/page.tsx`:
+  - Removed hardcoded `db.user.findFirst({where:{email:"arjun@nx.in"}})` demo-user lookup.
+  - Now calls `getSessionUser()` — if no session, returns `<AuthScreen />`; if session, returns `<AppShell user={safeUser} />`.
+  - The "NeighborX is not seeded yet" empty-state was removed (AuthScreen now handles the no-user case).
+
+- Updated `/home/z/my-project/src/components/nx/header.tsx`:
+  - Added `handleLogout` callback: POST /api/auth/logout → success toast → window.location.reload() after 600ms → lands back on AuthScreen.
+  - Replaced the placeholder "Switch demo user" dropdown item with:
+    - "Signed in as {user.email}" info text (muted)
+    - "Sign out" item (destructive red, with LogOut icon, disabled while loggingOut)
+  - Added icons to all dropdown items (UserCircle2, Sparkles, ShieldCheck, LogOut).
+
+- Verification (browser-tested end-to-end via agent-browser):
+  1. **Login flow**: cleared cookies → opened / → AuthScreen rendered with logo, marketing headline, login form, 6 demo buttons. Clicked "Arjun Deshmukh 👑 SUPER_ADMIN" → email auto-filled → clicked "Send login OTP" → OTP step appeared with demo code shown in green box → filled 6-digit OTP in InputOTP slots → clicked "Login" → success toast "Welcome back, Arjun Deshmukh!" → page reloaded → AppShell rendered with sidebar, header showing Arjun's name/avatar, dashboard visible. ✅
+  2. **Session persistence**: after login, reloaded the page → still logged in (cookie persisted). ✅
+  3. **Logout flow**: clicked account dropdown → "Sign out" → success toast "Signed out successfully" → page reloaded → back on AuthScreen. ✅
+  4. **Register flow**: clicked "Register" tab → filled name "Test User", phone "9876543210", role "🏠 Resident", email "testuser@nx.in" → clicked "Send registration OTP" → OTP step → filled code → clicked "Create account & login" → success toast "Welcome to NeighborX! 🎉" → AppShell rendered. Verified via account dropdown: "Test User" / "testuser@nx.in" / "Sign out" visible. ✅ (Cleaned up the test user from DB afterward.)
+  5. **Wrong OTP error**: entered "000000" → "Invalid OTP code. Please check and try again." toast. ✅
+  6. **Non-existent email login**: entered "nonexistent@nx.in" → "No account found with this email. Tap Register to create one." toast. ✅
+  7. VLM (glm-4.6v) confirmed all visual checks on screenshots verify-auth-screen.png, verify-otp-step.png, verify-post-login.png, verify-post-logout.png, verify-register.png, verify-new-user.png, verify-wrong-otp.png.
+
+- `bun run lint` — clean (0 errors, 0 warnings).
+- Dev log shows all 4 auth endpoints returning 200: POST /api/auth/send-otp 200, POST /api/auth/verify-otp 200, POST /api/auth/logout 200, GET / 200.
+
+Stage Summary:
+- Full passwordless OTP auth live: login + register + logout + session persistence.
+- 4 new API routes: /api/auth/send-otp, /api/auth/verify-otp, /api/auth/logout, /api/auth/session.
+- New Prisma model: OtpCode (with 10-min TTL, consumed flag, purpose LOGIN|REGISTER).
+- New lib: src/lib/auth.ts (cookie-based session helpers using next/headers).
+- New component: src/components/nx/auth-screen.tsx (~330 lines, full-screen 2-column auth UI with marketing left + form right, 6 demo-account quick-fill buttons, InputOTP 6-slot input, 30s resend countdown, demo-OTP display box).
+- page.tsx now reads session cookie instead of hardcoding Arjun — no session → AuthScreen, session → AppShell.
+- Header dropdown has real "Sign out" + "Signed in as {email}" — replaces the placeholder "Switch demo user".
+- All 3 core flows browser-verified end-to-end (login, logout, register) + 2 error cases (wrong OTP, non-existent email).
+- Demo OTP is returned in the API response and displayed in a green box on the OTP step — in production this would be sent via SMS/email and NOT returned.
+- Lint clean. No existing functionality broken — Admin Panel, sidebar, footer, all modules still work as before.

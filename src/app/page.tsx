@@ -1,5 +1,6 @@
-import { db } from "@/lib/db";
 import { AppShell } from "@/components/nx/app-shell";
+import { AuthScreen } from "@/components/nx/auth-screen";
+import { getSessionUser } from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -8,20 +9,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export default async function Page() {
-  // default demo user = Arjun Deshmukh
-  const user = await db.user.findFirst({ where: { email: "arjun@nx.in" } });
+  // Read session cookie → if no session, show the AuthScreen (login/register/OTP).
+  const user = await getSessionUser();
 
   if (!user) {
-    return (
-      <div className="grid min-h-screen place-items-center p-6">
-        <div className="text-center">
-          <p className="font-semibold">NeighborX is not seeded yet</p>
-          <p className="text-sm text-muted-foreground">
-            Run <code className="rounded bg-muted px-1.5 py-0.5">bun prisma/seed.ts</code> to populate the database.
-          </p>
-        </div>
-      </div>
-    );
+    return <AuthScreen />;
   }
 
   // serialize dates to strings for client

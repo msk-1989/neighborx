@@ -22,7 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, Menu, Moon, Sun, MapPin, ChevronDown, Globe2 } from "lucide-react";
+import { Bell, Menu, Moon, Sun, MapPin, ChevronDown, Globe2, LogOut, UserCircle2, Sparkles, ShieldCheck } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Sidebar } from "./sidebar";
 import { Logo } from "./logo";
@@ -48,6 +48,23 @@ export function Header({ user }: { user: User }) {
   const setModule = useNX((s) => s.setModule);
   const [notifs, setNotifs] = React.useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = React.useState(false);
+  const [loggingOut, setLoggingOut] = React.useState(false);
+
+  const handleLogout = React.useCallback(async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await api("/api/auth/logout", { method: "POST" });
+      toast.success("Signed out successfully", {
+        description: "You can login again anytime.",
+      });
+      // Hard reload to land on AuthScreen
+      setTimeout(() => window.location.reload(), 600);
+    } catch (err: any) {
+      toast.error("Logout failed — please try again.");
+      setLoggingOut(false);
+    }
+  }, [loggingOut]);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -276,17 +293,28 @@ export function Header({ user }: { user: User }) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setModule("profile")}>
+                <UserCircle2 className="mr-2 h-4 w-4" />
                 My Profile & Verification
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setModule("assistant")}>
+                <Sparkles className="mr-2 h-4 w-4" />
                 Ask AI Assistant
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setModule("chat")}>
+                <ShieldCheck className="mr-2 h-4 w-4" />
                 Community Chat
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => toast.info("Signed in as demo user")}>
-                Switch demo user
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                Signed in as <span className="font-semibold text-foreground">{user.email}</span>
+              </div>
+              <DropdownMenuItem
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                {loggingOut ? "Signing out…" : "Sign out"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
