@@ -9,21 +9,39 @@ export const maxDuration = 60;
 
 export default async function Page() {
   // default demo user = Arjun Deshmukh
-  const user = await db.user.findFirst({ where: { email: "arjun@nx.in" } });
+  try {
+    const user = await db.user.findFirst({ where: { email: "arjun@nx.in" } });
 
-  if (!user) {
+    if (!user) {
+      return (
+        <div className="grid min-h-screen place-items-center p-6">
+          <div className="text-center">
+            <p className="font-semibold">Initializing NeighborX…</p>
+            <p className="text-sm text-muted-foreground">
+              The neighborhood database is being seeded. Please refresh in a
+              moment.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // serialize dates to strings for client
+    const safeUser = JSON.parse(JSON.stringify(user)) as User;
+
+    return <AppShell user={safeUser} />;
+  } catch (e) {
+    console.error("[page] DB error:", e);
     return (
       <div className="grid min-h-screen place-items-center p-6">
-        <div className="text-center">
-          <p className="font-semibold">Initializing NeighborX…</p>
-          <p className="text-sm text-muted-foreground">Please run the seed script.</p>
+        <div className="max-w-md text-center">
+          <p className="font-semibold">NeighborX is warming up…</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The database is initializing on the serverless runtime. Please
+            refresh in a moment.
+          </p>
         </div>
       </div>
     );
   }
-
-  // serialize dates to strings for client
-  const safeUser = JSON.parse(JSON.stringify(user)) as User;
-
-  return <AppShell user={safeUser} />;
 }

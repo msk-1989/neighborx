@@ -18,9 +18,12 @@ import { runSeed } from "../../prisma/seed";
  *             instance and reset on the next cold start — acceptable for a demo.
  */
 
-// Fallback for serverless: if no DATABASE_URL is configured (e.g. Vercel didn't
-// receive the env), default to /tmp so the app still boots instead of crashing.
-if (!process.env.DATABASE_URL) {
+// On Vercel serverless the filesystem is read-only except /tmp. The local .env
+// ships a development DATABASE_URL (an absolute path that doesn't exist on the
+// Lambda runtime) — so when the VERCEL env var is set, force the DB into /tmp.
+// Locally (no VERCEL env), respect whatever DATABASE_URL .env provides.
+const isVercelRuntime = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+if (isVercelRuntime || !process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:/tmp/neighborx.db";
 }
 

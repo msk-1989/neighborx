@@ -1,6 +1,13 @@
 # Keep the Vercel build context lean — exclude everything that isn't needed
 # to build & run the Next.js app.
 
+# Local environment files — NEVER ship to Vercel. The local .env sets
+# DATABASE_URL to an absolute dev path that doesn't exist on the Lambda runtime;
+# src/lib/db.ts forces /tmp when process.env.VERCEL is set instead.
+.env
+.env.local
+.env.*.local
+
 # Local SQLite DB (Vercel uses /tmp at runtime instead)
 db/
 prisma/*.db
