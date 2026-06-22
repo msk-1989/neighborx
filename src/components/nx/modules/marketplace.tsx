@@ -101,7 +101,7 @@ export function Marketplace({ uid }: { uid: string }) {
             key={c.key}
             onClick={() => setCat(c.key)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-2 text-xs font-medium transition-colors tap-feedback",
               cat === c.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground"

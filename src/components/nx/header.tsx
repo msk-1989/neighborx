@@ -25,6 +25,7 @@ import {
 import { Bell, Menu, Moon, Sun, MapPin, ChevronDown, Globe2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Sidebar } from "./sidebar";
+import { Logo } from "./logo";
 import { UserAvatar, VerifyBadges } from "./user-bits";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -66,12 +67,17 @@ export function Header({ user }: { user: User }) {
   const unread = notifs.filter((n) => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-40 border-b glass">
-      <div className="flex h-16 items-center gap-2 px-3 sm:px-4">
-        {/* mobile menu */}
+    <header className="sticky top-0 z-40 border-b glass pt-safe">
+      <div className="flex h-14 items-center gap-1.5 px-2 sm:h-16 sm:gap-2 sm:px-4">
+        {/* Mobile: compact logo (replaces hamburger on phones — bottom tab bar handles nav) */}
+        <div className="lg:hidden">
+          <Logo compact />
+        </div>
+
+        {/* Desktop: hamburger + sidebar trigger */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden">
+            <Button variant="ghost" size="icon" className="hidden lg:inline-flex">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -80,16 +86,19 @@ export function Header({ user }: { user: User }) {
           </SheetContent>
         </Sheet>
 
-        {/* neighborhood + scope */}
-        <div className="flex items-center gap-2">
+        {/* neighborhood + scope — always visible, scales down on mobile */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="h-9 gap-1.5 px-2 sm:px-3">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
+              <Button variant="outline" className="h-9 gap-1 px-2 sm:px-3">
+                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                <span className="hidden max-w-[100px] truncate text-sm font-medium sm:inline">
                   {nb.society}
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="max-w-[80px] truncate text-xs font-medium sm:hidden">
+                  {nb.area}
+                </span>
+                <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72" align="start">
@@ -107,7 +116,7 @@ export function Header({ user }: { user: User }) {
                   </div>
                 </div>
                 <div className="border-t pt-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Visibility Scope
                   </div>
                   <div className="space-y-1">
@@ -119,7 +128,7 @@ export function Header({ user }: { user: User }) {
                           toast.success(`Scope: ${s.label} (${s.range})`);
                         }}
                         className={cn(
-                          "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                          "tap-feedback flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors",
                           nb.scope === s.key
                             ? "bg-primary text-primary-foreground"
                             : "hover:bg-accent"
@@ -138,14 +147,14 @@ export function Header({ user }: { user: User }) {
             </PopoverContent>
           </Popover>
 
-          {/* scope chips */}
+          {/* scope chips — tablet+ only */}
           <div className="hidden md:flex items-center gap-1">
             {SCOPES.map((s) => (
               <button
                 key={s.key}
                 onClick={() => setScope(s.key)}
                 className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  "tap-feedback rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
                   nb.scope === s.key
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:text-foreground"
@@ -157,7 +166,7 @@ export function Header({ user }: { user: User }) {
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
           {/* notifications */}
           <Popover open={notifOpen} onOpenChange={setNotifOpen}>
             <PopoverTrigger asChild>
@@ -174,7 +183,7 @@ export function Header({ user }: { user: User }) {
               <div className="border-b px-3 py-2.5">
                 <div className="text-sm font-semibold">Notifications</div>
               </div>
-              <div className="max-h-96 overflow-y-auto scrollbar-thin">
+              <div className="max-h-96 overflow-y-auto scrollbar-thin overscroll-contain">
                 {notifs.length === 0 && (
                   <div className="px-3 py-8 text-center text-sm text-muted-foreground">
                     No notifications
@@ -198,9 +207,9 @@ export function Header({ user }: { user: User }) {
                             : "bg-muted-foreground"
                         )}
                       />
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium">{n.title}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-2">
+                        <div className="line-clamp-2 text-xs text-muted-foreground">
                           {n.body}
                         </div>
                         <div className="mt-0.5 text-[10px] text-muted-foreground">
@@ -231,17 +240,20 @@ export function Header({ user }: { user: User }) {
           {/* user */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-full p-0.5 pr-2 hover:bg-accent transition-colors">
+              <button
+                className="tap-feedback flex items-center gap-1.5 rounded-full p-0.5 pr-0 transition-colors hover:bg-accent sm:pr-2"
+                aria-label="Account menu"
+              >
                 <UserAvatar user={user} />
-                <div className="hidden sm:block text-left leading-tight">
-                  <div className="text-sm font-semibold max-w-[120px] truncate">
+                <div className="hidden text-left leading-tight sm:block">
+                  <div className="max-w-[120px] truncate text-sm font-semibold">
                     {user.name}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
                     {user.role.replace(/_/g, " ")}
                   </div>
                 </div>
-                <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">

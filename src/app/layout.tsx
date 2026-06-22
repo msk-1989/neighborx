@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,6 +14,20 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// viewport-fit=cover enables safe-area-inset-* env() values on iOS notch / home indicator.
+// maximumScale=1 + user-scalable=no gives a native-app feel (prevents pinch-zoom on inputs).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0f8a5f" },
+    { media: "(prefers-color-scheme: dark)", color: "#155247" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "NeighborX — India's Hyperlocal Community & Commerce Super App",

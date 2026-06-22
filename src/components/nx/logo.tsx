@@ -1,6 +1,23 @@
 import { cn } from "@/lib/utils";
 
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className, compact = false }: { className?: string; compact?: boolean }) {
+  if (compact) {
+    // Mobile header: icon + wordmark only (no tagline) — saves vertical space
+    return (
+      <div className={cn("flex items-center gap-1.5", className)}>
+        <div className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-white shadow-sm">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 11l9-7 9 7" />
+            <path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9" />
+            <path d="M9 21v-6h6v6" />
+          </svg>
+        </div>
+        <div className="text-base font-extrabold tracking-tight">
+          Neighbor<span className="text-gradient">X</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <div className="relative grid h-9 w-9 place-items-center rounded-xl brand-gradient text-white shadow-sm">

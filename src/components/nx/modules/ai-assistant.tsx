@@ -73,7 +73,7 @@ export function AIAssistant() {
           </div>
         </div>
 
-        <div ref={scrollRef} className="max-h-[52vh] min-h-[300px] space-y-4 overflow-y-auto scrollbar-thin p-4">
+        <div ref={scrollRef} className="max-h-[52dvh] min-h-[300px] space-y-4 overflow-y-auto overscroll-contain scrollbar-thin p-4">
           {msgs.map((m, i) => (
             <div key={i} className={cn("flex gap-2.5", m.role === "user" && "flex-row-reverse")}>
               <div className={cn(

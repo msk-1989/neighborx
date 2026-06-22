@@ -113,7 +113,7 @@ export function Emergency({ uid }: { uid: string }) {
               <button
                 key={c.key}
                 onClick={() => setOpen(true)}
-                className={cn("flex flex-col items-center gap-1 rounded-lg p-2 text-center transition-colors hover:bg-accent", c.color)}
+                className={cn("flex flex-col items-center gap-1 rounded-lg p-2.5 text-center transition-colors hover:bg-accent tap-feedback", c.color)}
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-[10px] font-medium leading-tight">{c.label}</span>
@@ -173,10 +173,10 @@ function EmergencyCard({ e, onRespond, onResolve }: { e: Emergency; onRespond: (
             </div>
             {active && (
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={onRespond}>
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 tap-feedback" onClick={onRespond}>
                   <HandHeart className="h-3.5 w-3.5" /> I can help
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 gap-1.5" onClick={onResolve}>
+                <Button size="sm" variant="ghost" className="h-8 gap-1.5 tap-feedback" onClick={onResolve}>
                   <Check className="h-3.5 w-3.5" /> Mark resolved
                 </Button>
               </div>

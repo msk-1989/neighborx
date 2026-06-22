@@ -152,7 +152,7 @@ export function HomeFeed({ uid }: { uid: string }) {
                       key={s.key}
                       onClick={() => setScope(s.key)}
                       className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium transition-colors",
+                        "rounded px-2.5 py-1.5 text-xs font-medium transition-colors tap-feedback",
                         scope === s.key
                           ? "bg-background shadow-sm text-foreground"
                           : "text-muted-foreground"
@@ -315,7 +315,7 @@ function PostCard({
             setLiked((l) => !l);
             if (!liked) onLike();
           }}
-          className={cn("gap-1.5 text-muted-foreground", liked && "text-destructive")}
+          className={cn("h-9 gap-1.5 tap-feedback text-muted-foreground", liked && "text-destructive")}
         >
           <Heart className={cn("h-4 w-4", liked && "fill-current")} />
           <span className="text-xs">{post.likes + (liked ? 1 : 0)}</span>
@@ -324,7 +324,7 @@ function PostCard({
           variant="ghost"
           size="sm"
           onClick={() => setShowComments((s) => !s)}
-          className="gap-1.5 text-muted-foreground"
+          className="h-9 gap-1.5 tap-feedback text-muted-foreground"
         >
           <MessageCircle className="h-4 w-4" />
           <span className="text-xs">{post.comments.length}</span>
@@ -333,7 +333,7 @@ function PostCard({
           variant="ghost"
           size="sm"
           onClick={() => toast.success("Link copied to clipboard")}
-          className="gap-1.5 text-muted-foreground"
+          className="h-9 gap-1.5 tap-feedback text-muted-foreground"
         >
           <Share2 className="h-4 w-4" />
         </Button>
@@ -344,7 +344,7 @@ function PostCard({
             setSaved((s) => !s);
             toast.success(saved ? "Removed from saved" : "Saved");
           }}
-          className={cn("ml-auto gap-1.5 text-muted-foreground", saved && "text-primary")}
+          className={cn("ml-auto h-9 gap-1.5 tap-feedback text-muted-foreground", saved && "text-primary")}
         >
           <Bookmark className={cn("h-4 w-4", saved && "fill-current")} />
         </Button>

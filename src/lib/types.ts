@@ -3,17 +3,29 @@
 export type ModuleKey =
   | "dashboard"
   | "feed"
-  | "marketplace"
+  | "groups"
+  | "events"
+  | "chat"
+  | "lostfound"
+  | "watch"
+  | "emergency"
   | "businesses"
+  | "reputation"
+  | "profile"
+  | "marketplace"
   | "services"
   | "jobs"
-  | "emergency"
   | "complaints"
-  | "lostfound"
-  | "events"
   | "assistant"
-  | "chat"
-  | "profile";
+  // Coming-soon placeholders (Phase 2-4)
+  | "property"
+  | "society"
+  | "fundraising"
+  | "carpool"
+  | "borrow"
+  | "commerce"
+  | "volunteer"
+  | "skills";
 
 export type VerificationLevel = 1 | 2 | 3 | 4 | 5;
 
@@ -31,6 +43,8 @@ export interface User {
   verifyAddress: boolean;
   verifyBusiness: boolean;
   rewardPoints: number;
+  tier: string;
+  heroLevel: number;
   area: string;
   city: string;
   district: string;
@@ -261,4 +275,91 @@ export function verificationBadges(u: {
 
 export function inr(n: number): string {
   return "₹" + n.toLocaleString("en-IN");
+}
+
+// ===== Phase 1 types =====
+
+export interface Group {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  icon?: string | null;
+  privacy: string;
+  scope: string;
+  area: string;
+  city: string;
+  society: string;
+  ownerId: string;
+  owner: User;
+  memberCount: number;
+  members?: GroupMember[];
+  createdAt: string;
+}
+
+export interface GroupMember {
+  id: string;
+  groupId: string;
+  userId: string;
+  user: User;
+  role: string;
+  joinedAt: string;
+}
+
+export interface Achievement {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  tier: string;
+  points: number;
+}
+
+export interface UserAchievement {
+  id: string;
+  userId: string;
+  achievementId: string;
+  achievement: Achievement;
+  earnedAt: string;
+}
+
+export interface WatchAlert {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  location: string;
+  severity: string;
+  status: string;
+  reporterId: string;
+  reporter: User;
+  helpfulCount: number;
+  createdAt: string;
+}
+
+// Reputation tiers (Pillar 20)
+export type ReputationTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM" | "LEGEND";
+
+export const TIER_CONFIG: { tier: ReputationTier; min: number; label: string; color: string; icon: string }[] = [
+  { tier: "BRONZE", min: 0, label: "Bronze", color: "bg-amber-700 text-amber-50", icon: "🥉" },
+  { tier: "SILVER", min: 150, label: "Silver", color: "bg-slate-400 text-slate-950", icon: "🥈" },
+  { tier: "GOLD", min: 400, label: "Gold", color: "bg-amber-400 text-amber-950", icon: "🥇" },
+  { tier: "PLATINUM", min: 800, label: "Platinum", color: "bg-cyan-400 text-cyan-950", icon: "💎" },
+  { tier: "LEGEND", min: 1500, label: "Legend", color: "bg-fuchsia-500 text-fuchsia-50", icon: "👑" },
+];
+
+export function tierForPoints(points: number): ReputationTier {
+  let result: ReputationTier = "BRONZE";
+  for (const t of TIER_CONFIG) {
+    if (points >= t.min) result = t.tier;
+  }
+  return result;
+}
+
+export function nextTier(points: number): { tier: ReputationTier; min: number; label: string; icon: string } | null {
+  for (const t of TIER_CONFIG) {
+    if (points < t.min) return t;
+  }
+  return null;
 }

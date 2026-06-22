@@ -90,7 +90,7 @@ export function CommunityChat({ user }: { user: User }) {
         </div>
 
         {/* rooms */}
-        <div className="flex gap-1.5 overflow-x-auto border-b p-2 scrollbar-thin">
+        <div className="flex gap-1.5 overflow-x-auto border-b p-2 no-scrollbar">
           {ROOMS.map((r) => (
             <button
               key={r.id}
@@ -106,7 +106,7 @@ export function CommunityChat({ user }: { user: User }) {
         </div>
 
         {/* messages */}
-        <div ref={scrollRef} className="max-h-[52vh] min-h-[300px] space-y-3 overflow-y-auto scrollbar-thin p-4">
+        <div ref={scrollRef} className="max-h-[52dvh] min-h-[300px] space-y-3 overflow-y-auto overscroll-contain scrollbar-thin p-4">
           {messages.length === 0 && !loading && (
             <div className="grid h-full place-items-center text-center text-sm text-muted-foreground">
               <div>

@@ -10,14 +10,14 @@ async function main() {
 
   // ----- Users -----
   const users = await Promise.all([
-    db.user.create({ data: { name: "Arjun Deshmukh", email: "arjun@nx.in", phone: "9822012345", avatar: AV("Arjun"), bio: "Software engineer, society resident. Loves cricket.", role: "RESIDENT", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 420, area: "Khair Nagar", society: "Royal Residency" } }),
-    db.user.create({ data: { name: "Priya Kulkarni", email: "priya@nx.in", phone: "9822034567", avatar: AV("Priya"), bio: "Homemaker & community organizer.", role: "SOCIETY_ADMIN", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 680, area: "Khair Nagar", society: "Royal Residency" } }),
-    db.user.create({ data: { name: "Ravi Shinde", email: "ravi@nx.in", phone: "9822045678", avatar: AV("Ravi"), bio: "Runs Shinde Kirana Store. Local business owner.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 310, area: "Khair Nagar", society: "Royal Residency" } }),
-    db.user.create({ data: { name: "Sneha Patil", email: "sneha@nx.in", phone: "9822056789", avatar: AV("Sneha"), bio: "Certified electrician & plumber. 8 yrs experience.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 250, area: "Shivaji Chowk", society: "Ganesh Nagar" } }),
-    db.user.create({ data: { name: "Mahesh Jadhav", email: "mahesh@nx.in", phone: "9822067890", avatar: AV("Mahesh"), bio: "HR at Udgir Foods Pvt Ltd. Hiring locally.", role: "EMPLOYER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 180, area: "Midc Road", society: "Industrial Estate" } }),
-    db.user.create({ data: { name: "Anita Desai", email: "anita@nx.in", phone: "9822078901", avatar: AV("Anita"), bio: "Teacher & tutor. Class 5-10 Maths & Science.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, rewardPoints: 200, area: "Station Road", society: "Sai Apartments" } }),
-    db.user.create({ data: { name: "Vijay More", email: "vijay@nx.in", phone: "9822089012", avatar: AV("Vijay"), bio: "Auto driver & delivery partner.", role: "RESIDENT", verifyMobile: true, verifyEmail: false, rewardPoints: 90, area: "Khair Nagar", society: "Royal Residency" } }),
-    db.user.create({ data: { name: "Sunita Rao", email: "sunita@nx.in", phone: "9822090123", avatar: AV("Sunita"), bio: "Doctor at Rao Clinic. General physician.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 540, area: "Shivaji Chowk", society: "Medical Complex" } }),
+    db.user.create({ data: { name: "Arjun Deshmukh", email: "arjun@nx.in", phone: "9822012345", avatar: AV("Arjun"), bio: "Software engineer, society resident. Loves cricket.", role: "RESIDENT", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 420, tier: "GOLD", heroLevel: 1, area: "Khair Nagar", society: "Royal Residency" } }),
+    db.user.create({ data: { name: "Priya Kulkarni", email: "priya@nx.in", phone: "9822034567", avatar: AV("Priya"), bio: "Homemaker & community organizer.", role: "SOCIETY_ADMIN", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 680, tier: "GOLD", heroLevel: 3, area: "Khair Nagar", society: "Royal Residency" } }),
+    db.user.create({ data: { name: "Ravi Shinde", email: "ravi@nx.in", phone: "9822045678", avatar: AV("Ravi"), bio: "Runs Shinde Kirana Store. Local business owner.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 310, tier: "SILVER", heroLevel: 0, area: "Khair Nagar", society: "Royal Residency" } }),
+    db.user.create({ data: { name: "Sneha Patil", email: "sneha@nx.in", phone: "9822056789", avatar: AV("Sneha"), bio: "Certified electrician & plumber. 8 yrs experience.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 250, tier: "SILVER", heroLevel: 1, area: "Shivaji Chowk", society: "Ganesh Nagar" } }),
+    db.user.create({ data: { name: "Mahesh Jadhav", email: "mahesh@nx.in", phone: "9822067890", avatar: AV("Mahesh"), bio: "HR at Udgir Foods Pvt Ltd. Hiring locally.", role: "EMPLOYER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 180, tier: "SILVER", heroLevel: 0, area: "Midc Road", society: "Industrial Estate" } }),
+    db.user.create({ data: { name: "Anita Desai", email: "anita@nx.in", phone: "9822078901", avatar: AV("Anita"), bio: "Teacher & tutor. Class 5-10 Maths & Science.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, rewardPoints: 200, tier: "SILVER", heroLevel: 1, area: "Station Road", society: "Sai Apartments" } }),
+    db.user.create({ data: { name: "Vijay More", email: "vijay@nx.in", phone: "9822089012", avatar: AV("Vijay"), bio: "Auto driver & delivery partner.", role: "RESIDENT", verifyMobile: true, verifyEmail: false, rewardPoints: 90, tier: "BRONZE", heroLevel: 0, area: "Khair Nagar", society: "Royal Residency" } }),
+    db.user.create({ data: { name: "Sunita Rao", email: "sunita@nx.in", phone: "9822090123", avatar: AV("Sunita"), bio: "Doctor at Rao Clinic. General physician.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 540, tier: "GOLD", heroLevel: 2, area: "Shivaji Chowk", society: "Medical Complex" } }),
   ]);
 
   const [arjun, priya, ravi, sneha, mahesh, anita, vijay, sunita] = users;
@@ -101,6 +101,83 @@ async function main() {
     await db.rSVP.create({ data: { eventId: ev1.id, userId: ravi.id, status: "GOING" } });
     await db.rSVP.create({ data: { eventId: ev1.id, userId: vijay.id, status: "INTERESTED" } });
   }
+
+  // ----- Community Groups (Phase 1) -----
+  const groups = await Promise.all([
+    db.group.create({ data: { name: "Royal Residency Residents", description: "Official group for all residents of Royal Residency. Notices, discussions, help.", category: "OTHER", privacy: "PRIVATE", scope: "SOCIETY", ownerId: priya.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Khair Nagar Morning Walkers", description: "Daily 5:30 AM walkers group at Central Park. Stay fit together!", category: "SPORTS", privacy: "PUBLIC", scope: "AREA", ownerId: arjun.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Udgir Moms Club", description: "Support group for mothers. Kids activities, parenting tips, playdates.", category: "WOMEN", privacy: "PUBLIC", scope: "AREA", ownerId: priya.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Cricket Lovers Udgir", description: "Weekend cricket matches, tournaments, gear sharing.", category: "SPORTS", privacy: "PUBLIC", scope: "CITY", ownerId: arjun.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Hanuman Temple Bhajan Mandali", description: "Weekly bhajan sessions every Thursday evening at the temple.", category: "RELIGIOUS", privacy: "PUBLIC", scope: "AREA", ownerId: vijay.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Udgir Job Seekers", description: "Local job openings, referrals, interview tips. Help each other get hired.", category: "PROFESSIONAL", privacy: "PUBLIC", scope: "CITY", ownerId: mahesh.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Pet Parents Udgir", description: "For pet owners — vet tips, lost & found, playdates, adoption.", category: "PETS", privacy: "PUBLIC", scope: "CITY", ownerId: anita.id, memberCount: 1 } }),
+    db.group.create({ data: { name: "Sai Apartments Owners", description: "Residents of Sai Apartments. Maintenance, issues, community.", category: "OTHER", privacy: "PRIVATE", scope: "SOCIETY", ownerId: anita.id, memberCount: 1 } }),
+  ]);
+  const [g1, g2, g3, g4, g5, g6, g7, g8] = groups;
+
+  // memberships — owners are auto-members; add a few more
+  await db.groupMember.create({ data: { groupId: g1.id, userId: priya.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g1.id, userId: arjun.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g1.id, userId: ravi.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g1.id, userId: vijay.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g2.id, userId: arjun.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g2.id, userId: sunita.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g2.id, userId: anita.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g3.id, userId: priya.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g3.id, userId: sunita.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g4.id, userId: arjun.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g4.id, userId: vijay.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g5.id, userId: vijay.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g6.id, userId: mahesh.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g6.id, userId: vijay.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g7.id, userId: anita.id, role: "OWNER" } });
+  await db.groupMember.create({ data: { groupId: g7.id, userId: priya.id, role: "MEMBER" } });
+  await db.groupMember.create({ data: { groupId: g8.id, userId: anita.id, role: "OWNER" } });
+
+  // update member counts
+  for (const g of groups) {
+    const count = await db.groupMember.count({ where: { groupId: g.id } });
+    await db.group.update({ where: { id: g.id }, data: { memberCount: count } });
+  }
+
+  // ----- Achievements (Phase 1 — Reputation) -----
+  const achievements = await Promise.all([
+    db.achievement.create({ data: { code: "FIRST_POST", title: "First Post", description: "Published your first post in the neighborhood feed.", icon: "✍️", tier: "BRONZE", points: 10 } }),
+    db.achievement.create({ data: { code: "HELPER", title: "Helpful Neighbor", description: "Gave 5 helpful recommendations to neighbors.", icon: "🤝", tier: "SILVER", points: 50 } }),
+    db.achievement.create({ data: { code: "SOS_RESPONDER", title: "SOS Responder", description: "Responded to 3 emergency SOS alerts.", icon: "🚑", tier: "GOLD", points: 100 } }),
+    db.achievement.create({ data: { code: "COMMUNITY_ORGANIZER", title: "Community Organizer", description: "Organized a successful community event.", icon: "🎉", tier: "GOLD", points: 120 } }),
+    db.achievement.create({ data: { code: "TRUSTED_SELLER", title: "Trusted Seller", description: "Completed 5 marketplace sales with 5-star ratings.", icon: "🛍️", tier: "SILVER", points: 60 } }),
+    db.achievement.create({ data: { code: "VERIFIED_RESIDENT", title: "Verified Resident", description: "Completed all 4 verification levels.", icon: "✅", tier: "SILVER", points: 80 } }),
+    db.achievement.create({ data: { code: "CIVIC_HERO", title: "Civic Hero", description: "Reported 10 civic issues that were resolved.", icon: "🏛️", tier: "GOLD", points: 150 } }),
+    db.achievement.create({ data: { code: "GROUP_CREATOR", title: "Group Creator", description: "Created a community group with 10+ members.", icon: "👥", tier: "SILVER", points: 40 } }),
+    db.achievement.create({ data: { code: "PET_REUNITER", title: "Pet Reuniter", description: "Helped reunite a lost pet with its family.", icon: "🐾", tier: "GOLD", points: 90 } }),
+    db.achievement.create({ data: { code: "LEGEND_NEIGHBOR", title: "Legend Neighbor", description: "Reached 1500+ reputation points. A true community pillar.", icon: "👑", tier: "LEGEND", points: 300 } }),
+  ]);
+  const [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10] = achievements;
+
+  // award achievements to users
+  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a1.id } });
+  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a2.id } });
+  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a6.id } });
+  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a8.id } });
+  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a1.id } });
+  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a4.id } });
+  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a6.id } });
+  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a8.id } });
+  await db.userAchievement.create({ data: { userId: sunita.id, achievementId: a3.id } });
+  await db.userAchievement.create({ data: { userId: sunita.id, achievementId: a6.id } });
+  await db.userAchievement.create({ data: { userId: ravi.id, achievementId: a5.id } });
+  await db.userAchievement.create({ data: { userId: ravi.id, achievementId: a6.id } });
+  await db.userAchievement.create({ data: { userId: vijay.id, achievementId: a9.id } });
+  await db.userAchievement.create({ data: { userId: anita.id, achievementId: a2.id } });
+  await db.userAchievement.create({ data: { userId: anita.id, achievementId: a8.id } });
+
+  // ----- Neighborhood Watch alerts (Phase 1 — Safety) -----
+  await db.watchAlert.create({ data: { type: "SCAM", title: "Fake UPI payment scam at Kirana stores", description: "A person is paying via UPI and showing fake 'payment successful' screenshots. Always check your UPI app confirmation before handing over goods. Happened at 2 stores in Khair Nagar yesterday.", location: "Khair Nagar Market", severity: "HIGH", reporterId: ravi.id, helpfulCount: 34 } });
+  await db.watchAlert.create({ data: { type: "SUSPICIOUS", title: "Unknown person checking locked gates at night", description: "Saw someone trying door handles on cars parked in Royal Residency lane 2 around 1 AM. Confronted, he ran towards main road. Please secure your vehicles and inform security.", location: "Royal Residency Lane 2", severity: "HIGH", reporterId: vijay.id, helpfulCount: 28 } });
+  await db.watchAlert.create({ data: { type: "SAFETY_TIP", title: "Streetlight out near park — avoid after dark", description: "The streetlight near Central Park gate has been broken for 4 days. Avoid walking alone in that stretch after 8 PM until repaired. Complaint already filed.", location: "Central Park Gate", severity: "MEDIUM", reporterId: priya.id, helpfulCount: 19 } });
+  await db.watchAlert.create({ data: { type: "CRIME", title: "Chain snatching incident near bus stand", description: "Two men on a black Pulsar snatched a gold chain from an elderly woman near bus stand at 6 PM yesterday. Police informed. Be alert, don't wear visible jewelry on lonely roads.", location: "Bus Stand, Udgir", severity: "CRITICAL", reporterId: sunita.id, helpfulCount: 52, status: "RESOLVED" } });
+  await db.watchAlert.create({ data: { type: "SCAM", title: "Fake job offer SMS circulating", description: "SMS claiming 'You're selected for a work-from-home job at Amazon. Pay ₹999 registration.' is a SCAM. Amazon does not charge for jobs. Do not pay or share OTP.", location: "Udgir (citywide)", severity: "MEDIUM", reporterId: mahesh.id, helpfulCount: 41 } });
 
   // ----- Notifications -----
   await db.notification.create({ data: { userId: arjun.id, title: "Emergency nearby", body: "O- blood required at Civil Hospital. Can you help?", type: "EMERGENCY" } });

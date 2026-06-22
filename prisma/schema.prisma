@@ -26,6 +26,10 @@ model User {
   verifyAddress Boolean  @default(false)
   verifyBusiness Boolean @default(false)
   rewardPoints  Int      @default(0)
+  // Reputation tier: BRONZE | SILVER | GOLD | PLATINUM | LEGEND
+  tier          String   @default("BRONZE")
+  // Community Hero status
+  heroLevel     Int      @default(0)
   // neighborhood context
   area          String   @default("Khair Nagar")
   city          String   @default("Udgir")
@@ -49,6 +53,10 @@ model User {
   rsvps          RSVP[]
   chatMessages   ChatMessage[]
   notifications  Notification[]
+  groupMemberships GroupMember[]
+  groupsOwned   Group[]     @relation("GroupOwner")
+  achievements   UserAchievement[]
+  watchAlerts    WatchAlert[]
 }
 
 model Post {
@@ -278,4 +286,82 @@ model Notification {
   type      String   @default("SYSTEM")
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// ===== Phase 1 additions =====
+
+// Community Groups — Pillar 1 (Community)
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  // category: HOBIES | SPORTS | RELIGIOUS | PROFESSIONAL | WOMEN | YOUTH | SENIORS | PARENTS | PETS | VOLUNTEER | OTHER
+  category    String   @default("OTHER")
+  icon        String?
+  // privacy: PUBLIC | PRIVATE | SECRET
+  privacy     String   @default("PUBLIC")
+  scope       String   @default("SOCIETY") // SOCIETY | AREA | CITY
+  area        String   @default("Khair Nagar")
+  city        String   @default("Udgir")
+  society     String   @default("Royal Residency")
+  ownerId     String
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  members     GroupMember[]
+  memberCount Int      @default(1)
+  createdAt   DateTime @default(now())
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  // role: OWNER | ADMIN | MEMBER
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+// Reputation & Gamification — Pillar 20 (Rewards & Gamification)
+model Achievement {
+  id          String   @id @default(cuid())
+  // code is the stable identifier (e.g. FIRST_POST, HELPER, SOS_RESPONDER)
+  code        String   @unique
+  title       String
+  description String
+  icon        String
+  // tier: BRONZE | SILVER | GOLD | PLATINUM | LEGEND
+  tier        String   @default("BRONZE")
+  points      Int      @default(10)
+  earnedBy    UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  earnedAt      DateTime @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+// Neighborhood Watch — Pillar 3 (Safety)
+model WatchAlert {
+  id          String   @id @default(cuid())
+  // type: SCAM | CRIME | SUSPICIOUS | SAFETY_TIP | MISSING_PERSON | MISSING_PET
+  type        String   @default("SUSPICIOUS")
+  title       String
+  description String
+  location    String
+  // severity: LOW | MEDIUM | HIGH | CRITICAL
+  severity    String   @default("MEDIUM")
+  status      String   @default("ACTIVE") // ACTIVE | RESOLVED
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  helpfulCount Int     @default(0)
+  createdAt   DateTime @default(now())
 }

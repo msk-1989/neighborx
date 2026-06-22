@@ -100,7 +100,7 @@ function LFCard({ l }: { l: LostFound }) {
   const Icon = cat?.icon || Package;
   return (
     <Card className="p-4 flex gap-3">
-      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted sm:h-24 sm:w-24">
         {l.imageUrl ? (
           <img src={l.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (

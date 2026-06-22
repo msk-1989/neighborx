@@ -136,11 +136,11 @@ function ComplaintCard({ c, onUpvote }: { c: Complaint; onUpvote: () => void }) 
     <Card className="p-4">
       <div className="flex gap-3">
         {c.imageUrl ? (
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted sm:h-20 sm:w-20">
             <img src={c.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
           </div>
         ) : (
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground sm:h-20 sm:w-20">
             <ShieldAlert className="h-7 w-7" />
           </div>
         )}

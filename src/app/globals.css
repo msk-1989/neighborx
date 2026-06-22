@@ -119,6 +119,29 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Native app feel: kill the blue flash on tap, prevent text size adjust on rotation */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Prevent overscroll glow / pull-to-refresh from hijacking in-app scroll lists */
+    overscroll-behavior-y: none;
+  }
+  /* Better touch behavior on interactive elements (no double-tap zoom delay) */
+  button, a, [role="button"], label, select, summary {
+    touch-action: manipulation;
+  }
+  /* Smooth scrolling for in-app navigation, but respect reduced motion */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -160,5 +183,84 @@
     0% { box-shadow: 0 0 0 0 oklch(0.58 0.22 27 / 0.5); }
     70% { box-shadow: 0 0 0 14px oklch(0.58 0.22 27 / 0); }
     100% { box-shadow: 0 0 0 0 oklch(0.58 0.22 27 / 0); }
+  }
+
+  /* ---- Mobile app feel utilities ---- */
+
+  /* Safe-area insets for notched / home-indicator devices (requires viewport-fit=cover) */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Combined safe padding for the bottom tab bar (its own height + home indicator) */
+  .pb-tab-bar {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4.25rem);
+  }
+  .h-tab-bar {
+    height: calc(env(safe-area-inset-bottom) + 4.25rem);
+  }
+
+  /* Dynamic viewport height that adapts to mobile browser chrome (URL bar show/hide) */
+  .min-h-screen-dvh {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .h-screen-dvh {
+    height: 100vh;
+    height: 100dvh;
+  }
+  /* Sticky sidebar that matches dynamic viewport (no jitter when URL bar hides) */
+  .h-aside-dvh {
+    height: calc(100vh - 4rem);
+    height: calc(100dvh - 4rem);
+  }
+
+  /* Hide scrollbars on horizontal chip strips but keep scrollable */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Contain overscroll inside scrollable lists (chat, feeds) so the whole page doesn't bounce */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+
+  /* Active-press feedback for app-like tap responses (replaces default :active grey flash) */
+  .tap-feedback {
+    transition: transform 0.08s ease, opacity 0.08s ease;
+  }
+  .tap-feedback:active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  /* Slide-up entrance for bottom sheets / modals on mobile */
+  @keyframes slide-up-in {
+    from { transform: translateY(100%); opacity: 0.6; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-slide-up {
+    animation: slide-up-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Fade-in for module transitions on mobile */
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.22s ease-out;
   }
 }

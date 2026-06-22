@@ -83,7 +83,7 @@ export function Profile({ user: initial }: { user: User }) {
 
           {editing ? (
             <div className="mt-4 space-y-3 rounded-lg border p-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" />
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
               </div>
