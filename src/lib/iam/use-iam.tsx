@@ -44,17 +44,21 @@ const DEFAULT_STATE: IamState = {
 
 const IamContext = React.createContext<IamState>(DEFAULT_STATE);
 
-export function IamProvider({ children, initialRoles = ["RESIDENT"] }: {
+export function IamProvider({ children, uid, initialRoles = ["RESIDENT"] }: {
   children: React.ReactNode;
+  uid?: string;
   initialRoles?: RoleCode[];
 }) {
   const [roles, setRoles] = React.useState<RoleCode[]>(initialRoles);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
     let active = true;
-    api
-      .get<{ roles: RoleCode[] }>("/api/iam/me")
+    api<{ roles: RoleCode[] }>(`/api/iam/me?uid=${uid}`)
       .then((data) => {
         if (active) {
           setRoles(data.roles?.length ? data.roles : ["RESIDENT"]);
@@ -67,7 +71,7 @@ export function IamProvider({ children, initialRoles = ["RESIDENT"] }: {
     return () => {
       active = false;
     };
-  }, []);
+  }, [uid]);
 
   const value = React.useMemo<IamState>(() => {
     const perms = new Set<PermissionCode>();

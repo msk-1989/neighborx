@@ -1,0 +1,197 @@
+     1→import { PrismaClient } from "@prisma/client";
+     2→
+     3→const db = new PrismaClient();
+     4→
+     5→const AV = (seed: string) =>
+     6→  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1f4e0,ffd5dc,ffdfbf`;
+     7→
+     8→async function main() {
+     9→  console.log("🌱 Seeding NeighborX...");
+    10→
+    11→  // ----- Users -----
+    12→  const users = await Promise.all([
+    13→    db.user.create({ data: { name: "Arjun Deshmukh", email: "arjun@nx.in", phone: "9822012345", avatar: AV("Arjun"), bio: "Software engineer, society resident. Loves cricket.", role: "RESIDENT", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 420, tier: "GOLD", heroLevel: 1, area: "Khair Nagar", society: "Royal Residency" } }),
+    14→    db.user.create({ data: { name: "Priya Kulkarni", email: "priya@nx.in", phone: "9822034567", avatar: AV("Priya"), bio: "Homemaker & community organizer.", role: "SOCIETY_ADMIN", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 680, tier: "GOLD", heroLevel: 3, area: "Khair Nagar", society: "Royal Residency" } }),
+    15→    db.user.create({ data: { name: "Ravi Shinde", email: "ravi@nx.in", phone: "9822045678", avatar: AV("Ravi"), bio: "Runs Shinde Kirana Store. Local business owner.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 310, tier: "SILVER", heroLevel: 0, area: "Khair Nagar", society: "Royal Residency" } }),
+    16→    db.user.create({ data: { name: "Sneha Patil", email: "sneha@nx.in", phone: "9822056789", avatar: AV("Sneha"), bio: "Certified electrician & plumber. 8 yrs experience.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, rewardPoints: 250, tier: "SILVER", heroLevel: 1, area: "Shivaji Chowk", society: "Ganesh Nagar" } }),
+    17→    db.user.create({ data: { name: "Mahesh Jadhav", email: "mahesh@nx.in", phone: "9822067890", avatar: AV("Mahesh"), bio: "HR at Udgir Foods Pvt Ltd. Hiring locally.", role: "EMPLOYER", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 180, tier: "SILVER", heroLevel: 0, area: "Midc Road", society: "Industrial Estate" } }),
+    18→    db.user.create({ data: { name: "Anita Desai", email: "anita@nx.in", phone: "9822078901", avatar: AV("Anita"), bio: "Teacher & tutor. Class 5-10 Maths & Science.", role: "SERVICE_PROVIDER", verifyEmail: true, verifyAadhaar: true, rewardPoints: 200, tier: "SILVER", heroLevel: 1, area: "Station Road", society: "Sai Apartments" } }),
+    19→    db.user.create({ data: { name: "Vijay More", email: "vijay@nx.in", phone: "9822089012", avatar: AV("Vijay"), bio: "Auto driver & delivery partner.", role: "RESIDENT", verifyMobile: true, verifyEmail: false, rewardPoints: 90, tier: "BRONZE", heroLevel: 0, area: "Khair Nagar", society: "Royal Residency" } }),
+    20→    db.user.create({ data: { name: "Sunita Rao", email: "sunita@nx.in", phone: "9822090123", avatar: AV("Sunita"), bio: "Doctor at Rao Clinic. General physician.", role: "BUSINESS", verifyEmail: true, verifyAadhaar: true, verifyAddress: true, verifyBusiness: true, rewardPoints: 540, tier: "GOLD", heroLevel: 2, area: "Shivaji Chowk", society: "Medical Complex" } }),
+    21→  ]);
+    22→
+    23→  const [arjun, priya, ravi, sneha, mahesh, anita, vijay, sunita] = users;
+    24→
+    25→  // ----- Posts (Home Feed) -----
+    26→  await db.post.create({ data: { type: "TEXT", content: "Water supply will be cut tomorrow from 9 AM to 2 PM in Royal Residency due to tank cleaning. Please store water in advance! 💧", scope: "SOCIETY", tag: "Update", authorId: priya.id, likes: 34 } });
+    27→  await db.post.create({ data: { type: "TEXT", content: "Looking for a reliable car mechanic nearby. My Activa is making a weird sound from the front wheel. Any recommendations? 🛵", scope: "AREA", tag: "Question", authorId: arjun.id, likes: 12 } });
+    28→  await db.post.create({ data: { type: "POLL", content: "Where should we set up the new community garden in our society?", pollData: JSON.stringify({ question: "Where should we set up the new community garden?", options: [{ text: "Near Gate 2", votes: 28 }, { text: "Behind Block C", votes: 15 }, { text: "Rooftop of Block A", votes: 9 }] }), scope: "SOCIETY", tag: "Poll", authorId: priya.id, likes: 21 } });
+    29→  await db.post.create({ data: { type: "TEXT", content: "Saw a stray dog with a limp near Shivaji Chowk this morning. Called the local NGO 'Paws Udgir' — they're sending a team. ❤️🐾", scope: "AREA", tag: "Recommendation", authorId: anita.id, likes: 47 } });
+    30→  await db.post.create({ data: { type: "IMAGE", content: "Massive pothole on Midc Road near the flyover. Two-wheeler riders please be careful, especially at night. Tagging municipality.", imageUrl: "https://images.unsplash.com/photo-1597007030739-6d2e7172ee5b?w=800", scope: "CITY", tag: "Update", authorId: mahesh.id, likes: 63 } });
+    31→  await db.post.create({ data: { type: "TEXT", content: "Lost my brown leather wallet near the Hanuman Temple yesterday evening. Has Aadhaar card and some cash. Please DM if found. Reward assured. 🙏", scope: "AREA", tag: "Lost & Found", authorId: vijay.id, likes: 18 } });
+    32→  await db.post.create({ data: { type: "TEXT", content: "Congratulations to our society cricket team for winning the inter-society tournament! 🏆🎉 Great teamwork boys.", scope: "SOCIETY", tag: "Celebration", authorId: arjun.id, likes: 89 } });
+    33→
+    34→  // comments
+    35→  const p1 = await db.post.findFirst({ where: { authorId: arjun.id } });
+    36→  if (p1) {
+    37→    await db.comment.create({ data: { content: "Try Ramesh Auto Works near bus stand. Honest guy, fair prices.", postId: p1.id, authorId: vijay.id } });
+    38→    await db.comment.create({ data: { content: "Second Ramesh, he fixed my Pulsar last month.", postId: p1.id, authorId: ravi.id } });
+    39→  }
+    40→
+    41→  // ----- Marketplace listings -----
+    42→  await db.listing.create({ data: { title: "Samsung Galaxy M14 (6GB/128GB)", description: "8 months old, bill + box available. Battery health excellent. Selling as upgrading.", price: 11500, category: "ELECTRONICS", condition: "Like New", imageUrl: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800", location: "Royal Residency, Udgir", sellerId: arjun.id, boosted: true } });
+    43→  await db.listing.create({ data: { title: "Wooden Sofa Set (3+1+1)", description: "Sheesham wood sofa with cushions. 3 years old, excellent condition. Moving abroad so selling.", price: 18500, category: "FURNITURE", condition: "Used", imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800", location: "Ganesh Nagar, Udgir", sellerId: sneha.id } });
+    44→  await db.listing.create({ data: { title: "Honda Activa 4G (2019)", description: "Driven 24000 km. Regularly serviced. RC + Insurance valid. Single owner.", price: 42000, category: "VEHICLES", condition: "Used", imageUrl: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800", location: "Station Road, Udgir", sellerId: vijay.id, boosted: true } });
+    45→  await db.listing.create({ data: { title: "Engineering Textbooks (Complete Set)", description: "SEM 1-8 mechanical engg books. Almost new. Whole set for the price of 2 books.", price: 2500, category: "BOOKS", condition: "Like New", imageUrl: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800", location: "Midc Road, Udgir", sellerId: mahesh.id } });
+    46→  await db.listing.create({ data: { title: "Whirlpool Fridge 190L (Single Door)", description: "5 star rating. 2 years old. Cooling perfect. No repairs ever.", price: 9500, category: "APPLIANCES", condition: "Used", imageUrl: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=800", location: "Khair Nagar, Udgir", sellerId: priya.id } });
+    47→  await db.listing.create({ data: { title: "Men's Formal Shoes (UK 9)", description: "Bought but wrong size. Never worn. Leather, brown color.", price: 1200, category: "FASHION", condition: "New", imageUrl: "https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=800", location: "Sai Apartments, Udgir", sellerId: anita.id } });
+    48→
+    49→  // ----- Businesses -----
+    50→  await db.business.create({ data: { name: "Shinde Kirana Store", category: "GROCERY", description: "Daily groceries, fresh vegetables, household items. Home delivery within 2km. Monthly credit for residents.", address: "Shop 4, Khair Nagar Market, Udgir", phone: "9822011111", rating: 4.6, reviewCount: 124, imageUrl: "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=800", verified: true, featured: true, offer: "10% off on monthly groceries for NeighborX members", ownerId: ravi.id } });
+    51→  await db.business.create({ data: { name: "Rao Clinic", category: "CLINIC", description: "General physician & family doctor. OPD 10AM-2PM, 6PM-9PM. Home visits for elderly.", address: "Shivaji Chowk, Udgir", phone: "9822022222", rating: 4.9, reviewCount: 312, verified: true, featured: true, offer: "Free first consultation for senior citizens", ownerId: sunita.id } });
+    52→  await db.business.create({ data: { name: "Spice Garden Restaurant", category: "RESTAURANT", description: "Pure veg multi-cuisine. Famous for thali & South Indian. AC family section.", address: "Station Road, Udgir", phone: "9822033333", rating: 4.4, reviewCount: 256, imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800", offer: "Flat 15% off dine-in on weekdays", ownerId: ravi.id } });
+    53→  await db.business.create({ data: { name: "Udgir Medical & General Stores", category: "PHARMACY", description: "All medicines available. 24x7 emergency. Genuine products.", address: "Near Civil Hospital, Udgir", phone: "9822044444", rating: 4.7, reviewCount: 98, verified: true, ownerId: sunita.id } });
+    54→  await db.business.create({ data: { name: "Glow Salon & Spa", category: "SALON", description: "Unisex salon. Haircut, facial, bridal makeup. At-home service available.", address: "Midc Road, Udgir", phone: "9822055555", rating: 4.5, reviewCount: 67, imageUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800", offer: "First haircut free for kids under 10", ownerId: anita.id } });
+    55→  await db.business.create({ data: { name: "FitZone Gym", category: "GYM", description: "Modern equipment, certified trainers. Morning 5-11, evening 4-10.", address: "Ganesh Nagar, Udgir", phone: "9822066666", rating: 4.6, reviewCount: 143, featured: true, offer: "0 joining fee + 1 month free on annual", ownerId: mahesh.id } });
+    56→
+    57→  // ----- Services -----
+    58→  await db.service.create({ data: { category: "ELECTRICIAN", providerName: "Sneha Patil", bio: "Licensed electrician. Wiring, switchboard, inverter, fan repair. 8 years experience.", phone: "9822056789", rating: 4.8, jobsDone: 340, hourlyRate: 250, verified: true } });
+    59→  await db.service.create({ data: { category: "PLUMBER", providerName: "Suresh Kamble", bio: "All plumbing work. Leakage, taps, motor, geyser fitting.", phone: "9822077777", rating: 4.6, jobsDone: 210, hourlyRate: 200, verified: true } });
+    60→  await db.service.create({ data: { category: "TUTOR", providerName: "Anita Desai", bio: "Maths & Science for Class 5-10. ICSE & CBSE. Home tuition.", phone: "9822078901", rating: 4.9, jobsDone: 85, hourlyRate: 400, verified: true } });
+    61→  await db.service.create({ data: { category: "MAID", providerName: "Lakshmi B.", bio: "Cooking & house cleaning. Morning shift. References available.", phone: "9822088888", rating: 4.5, jobsDone: 60, hourlyRate: 150 } });
+    62→  await db.service.create({ data: { category: "DRIVER", providerName: "Vijay More", bio: "Auto & private driving. Airport drops, outstation. Safe & punctual.", phone: "9822089012", rating: 4.4, jobsDone: 150, hourlyRate: 300 } });
+    63→  await db.service.create({ data: { category: "CARPENTER", providerName: "Iqbal Khan", bio: "Furniture repair, door fitting, modular kitchen work.", phone: "9822099999", rating: 4.7, jobsDone: 175, hourlyRate: 350, verified: true } });
+    64→  await db.service.create({ data: { category: "PAINTER", providerName: "Deepak Pawar", bio: "Interior & exterior painting. Waterproofing. Free site visit.", phone: "9822100000", rating: 4.5, jobsDone: 95, hourlyRate: 280 } });
+    65→  await db.service.create({ data: { category: "CLEANING", providerName: "HomeCare Team", bio: "Deep home cleaning, sofa cleaning, pest control. Team of 3.", phone: "9822111111", rating: 4.6, jobsDone: 120, hourlyRate: 500, verified: true } });
+    66→
+    67→  // ----- Jobs -----
+    68→  await db.job.create({ data: { title: "Delivery Executive", company: "Udgir Foods Pvt Ltd", description: "Delivery of groceries & food orders within city. Bike + license must. Incentives on each delivery.", jobType: "FULL_TIME", salary: "₹18,000 - ₹25,000", location: "Udgir", category: "DELIVERY", openings: 8, employerId: mahesh.id } });
+    69→  await db.job.create({ data: { title: "Shop Assistant", company: "Shinde Kirana Store", description: "Billing, stocking, customer handling. 9 AM - 7 PM. Local candidate preferred.", jobType: "FULL_TIME", salary: "₹12,000 - ₹15,000", location: "Khair Nagar, Udgir", category: "RETAIL", openings: 2, employerId: ravi.id } });
+    70→  await db.job.create({ data: { title: "Sales Executive (FMCG)", company: "Latur Distributors", description: "Field sales for FMCG products. Visit shops, take orders. Travel allowance + incentive.", jobType: "FULL_TIME", salary: "₹15,000 - ₹22,000 + incentive", location: "Udgir & nearby", category: "SALES", openings: 4, employerId: mahesh.id } });
+    71→  await db.job.create({ data: { title: "Maths Teacher (Part-time)", company: "Bright Future Classes", description: "Teach Maths to Class 9-10. Evening batches. 2 hours/day.", jobType: "PART_TIME", salary: "₹8,000 - ₹12,000", location: "Station Road, Udgir", category: "GENERAL", openings: 1, employerId: anita.id } });
+    72→  await db.job.create({ data: { title: "Accountant", company: "Udgir Foods Pvt Ltd", description: "Tally Prime, GST returns, bank reconciliation. Min 2 yrs exp. B.Com.", jobType: "FULL_TIME", salary: "₹20,000 - ₹28,000", location: "Midc Road, Udgir", category: "ACCOUNTS", openings: 1, employerId: mahesh.id } });
+    73→
+    74→  // ----- Emergencies -----
+    75→  await db.emergency.create({ data: { category: "BLOOD", title: "O- Negative Blood Required Urgently", description: "Urgent need for O- blood at Udgir Civil Hospital for a surgery. Patient: 8 year old girl. Please share & help.", location: "Civil Hospital, Udgir", severity: "CRITICAL", reporterId: sunita.id, responders: 12 } });
+    76→  await db.emergency.create({ data: { category: "ACCIDENT", title: "Two-wheeler accident on Latur Road", description: "Biker hit by tempo near petrol pump. Need help transporting to hospital. Crowd gathered.", location: "Latur Road, near HP Pump", severity: "HIGH", reporterId: vijay.id, responders: 5 } });
+    77→  await db.emergency.create({ data: { category: "WOMEN_SAFETY", title: "Late night — feeling unsafe walking home", description: "Streetlight not working near my lane. Requesting a neighbor to walk with me from bus stop.", location: "Khair Nagar Lane 3", severity: "MEDIUM", reporterId: priya.id, responders: 3, status: "RESOLVED" } });
+    78→
+    79→  // ----- Complaints -----
+    80→  await db.complaint.create({ data: { category: "ROAD", title: "Broken road near Govt School", description: "The road behind ZP School has deep cracks and a broken culvert. Dangerous for kids.", location: "Behind ZP School, Khair Nagar", imageUrl: "https://images.unsplash.com/photo-1597007030739-6d2e7172ee5b?w=800", status: "IN_PROGRESS", upvotes: 47, reporterId: arjun.id } });
+    81→  await db.complaint.create({ data: { category: "GARBAGE", title: "Garbage not collected for 4 days", description: "Our lane's garbage has not been picked up since Monday. Foul smell, mosquitoes increasing.", location: "Ganesh Nagar, Lane 2", status: "SUBMITTED", upvotes: 23, reporterId: sneha.id } });
+    82→  await db.complaint.create({ data: { category: "STREETLIGHT", title: "3 streetlights not working", description: "Streetlights near park are off since a week. Safety issue at night.", location: "Royal Residency Main Road", status: "RESOLVED", upvotes: 31, reporterId: priya.id } });
+    83→  await db.complaint.create({ data: { category: "WATER", title: "Dirty water supply", description: "Muddy water coming from tap since 2 days. Need tanker or filter check.", location: "Sai Apartments", status: "SUBMITTED", upvotes: 18, reporterId: anita.id } });
+    84→
+    85→  // ----- Lost & Found -----
+    86→  await db.lostFound.create({ data: { type: "LOST", category: "PET", title: "Lost: Brown Labrador 'Simba'", description: "Simba went missing from Royal Residency gate on 14th evening. Wearing red collar. Very friendly. Family is devastated.", imageUrl: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800", location: "Royal Residency, Udgir", reward: 5000, reporterId: priya.id } });
+    87→  await db.lostFound.create({ data: { type: "FOUND", category: "MOBILE", title: "Found: Redmi phone near temple", description: "Found a Redmi Note phone near Hanuman Temple. Locked. Owner please describe to claim.", location: "Hanuman Temple, Udgir", reporterId: vijay.id } });
+    88→  await db.lostFound.create({ data: { type: "LOST", category: "DOCUMENT", title: "Lost: Aadhaar card & PAN card", description: "Lost my wallet containing Aadhaar & PAN near bus stand. Name: Vijay More.", location: "Bus Stand, Udgir", reward: 500, reporterId: vijay.id } });
+    89→  await db.lostFound.create({ data: { type: "FOUND", category: "KEYS", title: "Found: bunch of keys with bike key", description: "Found near park gate. Has a Honda key and 3 other keys with red keychain.", location: "Central Park, Udgir", reporterId: arjun.id } });
+    90→
+    91→  // ----- Events -----
+    92→  await db.event.create({ data: { title: "Society Diwali Get-together", description: "Annual Diwali celebration with rangoli competition, sweets distribution & cultural program. All residents invited!", category: "CULTURAL", date: "2025-10-20", time: "6:30 PM", venue: "Royal Residency Clubhouse", imageUrl: "https://images.unsplash.com/photo-1605021154424-7d44e6f1f0a1?w=800", organizerId: priya.id } });
+    93→  await db.event.create({ data: { title: "Morning Yoga Session", description: "Free community yoga session. Bring your own mat. Open to all ages.", category: "SPORTS", date: "2025-10-15", time: "6:00 AM", venue: "Central Park, Udgir", organizerId: sunita.id } });
+    94→  await db.event.create({ data: { title: "Blood Donation Camp", description: "Jointly organized with Civil Hospital. Healthy adults please donate. Refreshments provided. Certificate for donors.", category: "SOCIAL", date: "2025-10-18", time: "9:00 AM", venue: "Shivaji Chowk Community Hall", organizerId: sunita.id } });
+    95→  await db.event.create({ data: { title: "Career Guidance Workshop", description: "Free workshop for Class 10 & 12 students on career options after board exams. Expert speakers.", category: "EDUCATION", date: "2025-10-22", time: "11:00 AM", venue: "ZP School Hall, Khair Nagar", organizerId: anita.id } });
+    96→
+    97→  // some RSVPs
+    98→  const ev1 = await db.event.findFirst({ where: { organizerId: priya.id } });
+    99→  if (ev1) {
+   100→    await db.rSVP.create({ data: { eventId: ev1.id, userId: arjun.id, status: "GOING" } });
+   101→    await db.rSVP.create({ data: { eventId: ev1.id, userId: ravi.id, status: "GOING" } });
+   102→    await db.rSVP.create({ data: { eventId: ev1.id, userId: vijay.id, status: "INTERESTED" } });
+   103→  }
+   104→
+   105→  // ----- Community Groups (Phase 1) -----
+   106→  const groups = await Promise.all([
+   107→    db.group.create({ data: { name: "Royal Residency Residents", description: "Official group for all residents of Royal Residency. Notices, discussions, help.", category: "OTHER", privacy: "PRIVATE", scope: "SOCIETY", ownerId: priya.id, memberCount: 1 } }),
+   108→    db.group.create({ data: { name: "Khair Nagar Morning Walkers", description: "Daily 5:30 AM walkers group at Central Park. Stay fit together!", category: "SPORTS", privacy: "PUBLIC", scope: "AREA", ownerId: arjun.id, memberCount: 1 } }),
+   109→    db.group.create({ data: { name: "Udgir Moms Club", description: "Support group for mothers. Kids activities, parenting tips, playdates.", category: "WOMEN", privacy: "PUBLIC", scope: "AREA", ownerId: priya.id, memberCount: 1 } }),
+   110→    db.group.create({ data: { name: "Cricket Lovers Udgir", description: "Weekend cricket matches, tournaments, gear sharing.", category: "SPORTS", privacy: "PUBLIC", scope: "CITY", ownerId: arjun.id, memberCount: 1 } }),
+   111→    db.group.create({ data: { name: "Hanuman Temple Bhajan Mandali", description: "Weekly bhajan sessions every Thursday evening at the temple.", category: "RELIGIOUS", privacy: "PUBLIC", scope: "AREA", ownerId: vijay.id, memberCount: 1 } }),
+   112→    db.group.create({ data: { name: "Udgir Job Seekers", description: "Local job openings, referrals, interview tips. Help each other get hired.", category: "PROFESSIONAL", privacy: "PUBLIC", scope: "CITY", ownerId: mahesh.id, memberCount: 1 } }),
+   113→    db.group.create({ data: { name: "Pet Parents Udgir", description: "For pet owners — vet tips, lost & found, playdates, adoption.", category: "PETS", privacy: "PUBLIC", scope: "CITY", ownerId: anita.id, memberCount: 1 } }),
+   114→    db.group.create({ data: { name: "Sai Apartments Owners", description: "Residents of Sai Apartments. Maintenance, issues, community.", category: "OTHER", privacy: "PRIVATE", scope: "SOCIETY", ownerId: anita.id, memberCount: 1 } }),
+   115→  ]);
+   116→  const [g1, g2, g3, g4, g5, g6, g7, g8] = groups;
+   117→
+   118→  // memberships — owners are auto-members; add a few more
+   119→  await db.groupMember.create({ data: { groupId: g1.id, userId: priya.id, role: "OWNER" } });
+   120→  await db.groupMember.create({ data: { groupId: g1.id, userId: arjun.id, role: "MEMBER" } });
+   121→  await db.groupMember.create({ data: { groupId: g1.id, userId: ravi.id, role: "MEMBER" } });
+   122→  await db.groupMember.create({ data: { groupId: g1.id, userId: vijay.id, role: "MEMBER" } });
+   123→  await db.groupMember.create({ data: { groupId: g2.id, userId: arjun.id, role: "OWNER" } });
+   124→  await db.groupMember.create({ data: { groupId: g2.id, userId: sunita.id, role: "MEMBER" } });
+   125→  await db.groupMember.create({ data: { groupId: g2.id, userId: anita.id, role: "MEMBER" } });
+   126→  await db.groupMember.create({ data: { groupId: g3.id, userId: priya.id, role: "OWNER" } });
+   127→  await db.groupMember.create({ data: { groupId: g3.id, userId: sunita.id, role: "MEMBER" } });
+   128→  await db.groupMember.create({ data: { groupId: g4.id, userId: arjun.id, role: "OWNER" } });
+   129→  await db.groupMember.create({ data: { groupId: g4.id, userId: vijay.id, role: "MEMBER" } });
+   130→  await db.groupMember.create({ data: { groupId: g5.id, userId: vijay.id, role: "OWNER" } });
+   131→  await db.groupMember.create({ data: { groupId: g6.id, userId: mahesh.id, role: "OWNER" } });
+   132→  await db.groupMember.create({ data: { groupId: g6.id, userId: vijay.id, role: "MEMBER" } });
+   133→  await db.groupMember.create({ data: { groupId: g7.id, userId: anita.id, role: "OWNER" } });
+   134→  await db.groupMember.create({ data: { groupId: g7.id, userId: priya.id, role: "MEMBER" } });
+   135→  await db.groupMember.create({ data: { groupId: g8.id, userId: anita.id, role: "OWNER" } });
+   136→
+   137→  // update member counts
+   138→  for (const g of groups) {
+   139→    const count = await db.groupMember.count({ where: { groupId: g.id } });
+   140→    await db.group.update({ where: { id: g.id }, data: { memberCount: count } });
+   141→  }
+   142→
+   143→  // ----- Achievements (Phase 1 — Reputation) -----
+   144→  const achievements = await Promise.all([
+   145→    db.achievement.create({ data: { code: "FIRST_POST", title: "First Post", description: "Published your first post in the neighborhood feed.", icon: "✍️", tier: "BRONZE", points: 10 } }),
+   146→    db.achievement.create({ data: { code: "HELPER", title: "Helpful Neighbor", description: "Gave 5 helpful recommendations to neighbors.", icon: "🤝", tier: "SILVER", points: 50 } }),
+   147→    db.achievement.create({ data: { code: "SOS_RESPONDER", title: "SOS Responder", description: "Responded to 3 emergency SOS alerts.", icon: "🚑", tier: "GOLD", points: 100 } }),
+   148→    db.achievement.create({ data: { code: "COMMUNITY_ORGANIZER", title: "Community Organizer", description: "Organized a successful community event.", icon: "🎉", tier: "GOLD", points: 120 } }),
+   149→    db.achievement.create({ data: { code: "TRUSTED_SELLER", title: "Trusted Seller", description: "Completed 5 marketplace sales with 5-star ratings.", icon: "🛍️", tier: "SILVER", points: 60 } }),
+   150→    db.achievement.create({ data: { code: "VERIFIED_RESIDENT", title: "Verified Resident", description: "Completed all 4 verification levels.", icon: "✅", tier: "SILVER", points: 80 } }),
+   151→    db.achievement.create({ data: { code: "CIVIC_HERO", title: "Civic Hero", description: "Reported 10 civic issues that were resolved.", icon: "🏛️", tier: "GOLD", points: 150 } }),
+   152→    db.achievement.create({ data: { code: "GROUP_CREATOR", title: "Group Creator", description: "Created a community group with 10+ members.", icon: "👥", tier: "SILVER", points: 40 } }),
+   153→    db.achievement.create({ data: { code: "PET_REUNITER", title: "Pet Reuniter", description: "Helped reunite a lost pet with its family.", icon: "🐾", tier: "GOLD", points: 90 } }),
+   154→    db.achievement.create({ data: { code: "LEGEND_NEIGHBOR", title: "Legend Neighbor", description: "Reached 1500+ reputation points. A true community pillar.", icon: "👑", tier: "LEGEND", points: 300 } }),
+   155→  ]);
+   156→  const [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10] = achievements;
+   157→
+   158→  // award achievements to users
+   159→  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a1.id } });
+   160→  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a2.id } });
+   161→  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a6.id } });
+   162→  await db.userAchievement.create({ data: { userId: arjun.id, achievementId: a8.id } });
+   163→  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a1.id } });
+   164→  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a4.id } });
+   165→  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a6.id } });
+   166→  await db.userAchievement.create({ data: { userId: priya.id, achievementId: a8.id } });
+   167→  await db.userAchievement.create({ data: { userId: sunita.id, achievementId: a3.id } });
+   168→  await db.userAchievement.create({ data: { userId: sunita.id, achievementId: a6.id } });
+   169→  await db.userAchievement.create({ data: { userId: ravi.id, achievementId: a5.id } });
+   170→  await db.userAchievement.create({ data: { userId: ravi.id, achievementId: a6.id } });
+   171→  await db.userAchievement.create({ data: { userId: vijay.id, achievementId: a9.id } });
+   172→  await db.userAchievement.create({ data: { userId: anita.id, achievementId: a2.id } });
+   173→  await db.userAchievement.create({ data: { userId: anita.id, achievementId: a8.id } });
+   174→
+   175→  // ----- Neighborhood Watch alerts (Phase 1 — Safety) -----
+   176→  await db.watchAlert.create({ data: { type: "SCAM", title: "Fake UPI payment scam at Kirana stores", description: "A person is paying via UPI and showing fake 'payment successful' screenshots. Always check your UPI app confirmation before handing over goods. Happened at 2 stores in Khair Nagar yesterday.", location: "Khair Nagar Market", severity: "HIGH", reporterId: ravi.id, helpfulCount: 34 } });
+   177→  await db.watchAlert.create({ data: { type: "SUSPICIOUS", title: "Unknown person checking locked gates at night", description: "Saw someone trying door handles on cars parked in Royal Residency lane 2 around 1 AM. Confronted, he ran towards main road. Please secure your vehicles and inform security.", location: "Royal Residency Lane 2", severity: "HIGH", reporterId: vijay.id, helpfulCount: 28 } });
+   178→  await db.watchAlert.create({ data: { type: "SAFETY_TIP", title: "Streetlight out near park — avoid after dark", description: "The streetlight near Central Park gate has been broken for 4 days. Avoid walking alone in that stretch after 8 PM until repaired. Complaint already filed.", location: "Central Park Gate", severity: "MEDIUM", reporterId: priya.id, helpfulCount: 19 } });
+   179→  await db.watchAlert.create({ data: { type: "CRIME", title: "Chain snatching incident near bus stand", description: "Two men on a black Pulsar snatched a gold chain from an elderly woman near bus stand at 6 PM yesterday. Police informed. Be alert, don't wear visible jewelry on lonely roads.", location: "Bus Stand, Udgir", severity: "CRITICAL", reporterId: sunita.id, helpfulCount: 52, status: "RESOLVED" } });
+   180→  await db.watchAlert.create({ data: { type: "SCAM", title: "Fake job offer SMS circulating", description: "SMS claiming 'You're selected for a work-from-home job at Amazon. Pay ₹999 registration.' is a SCAM. Amazon does not charge for jobs. Do not pay or share OTP.", location: "Udgir (citywide)", severity: "MEDIUM", reporterId: mahesh.id, helpfulCount: 41 } });
+   181→
+   182→  // ----- Notifications -----
+   183→  await db.notification.create({ data: { userId: arjun.id, title: "Emergency nearby", body: "O- blood required at Civil Hospital. Can you help?", type: "EMERGENCY" } });
+   184→  await db.notification.create({ data: { userId: arjun.id, title: "New listing in your area", body: "Samsung Galaxy M14 listed near you for ₹11,500", type: "MARKETPLACE" } });
+   185→  await db.notification.create({ data: { userId: arjun.id, title: "Comment on your post", body: "Vijay commented on your post about mechanic", type: "SOCIAL" } });
+   186→  await db.notification.create({ data: { userId: priya.id, title: "Water cut notice", body: "Tomorrow 9 AM - 2 PM water supply cut", type: "SYSTEM" } });
+   187→
+   188→  console.log("✅ Seed complete");
+   189→}
+   190→
+   191→main()
+   192→  .catch((e) => {
+   193→    console.error(e);
+   194→    process.exit(1);
+   195→  })
+   196→  .finally(() => db.$disconnect());
+   197→

@@ -1,8 +1,10 @@
 /**
  * Server-side RBAC helpers — query the DB for a user's roles and check
  * permissions. Used by API routes and server components.
+ *
+ * IMPORTANT: This module imports @/lib/db (Prisma) which is server-only.
+ * Do not import this from client components.
  */
-import "server-only";
 import { db } from "@/lib/db";
 import {
   type RoleCode,

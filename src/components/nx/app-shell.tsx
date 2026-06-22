@@ -43,7 +43,7 @@ export function AppShell({ user }: { user: User }) {
   }, []);
 
   return (
-    <IamProvider initialRoles={["RESIDENT"]}>
+    <IamProvider uid={uid} initialRoles={["RESIDENT"]}>
     <div className="flex min-h-screen-dvh flex-col bg-background">
       <Header user={user} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1">
