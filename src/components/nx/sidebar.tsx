@@ -18,7 +18,7 @@ export function Sidebar({ onNavigate, uid }: { onNavigate?: () => void; uid?: st
   const canViewAdmin = iam.hasPermission(PERMISSION.VIEW_ADMIN_PANEL);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       <div className="border-b px-4 py-4">
         <Logo />
       </div>
@@ -56,7 +56,7 @@ export function Sidebar({ onNavigate, uid }: { onNavigate?: () => void; uid?: st
         )}
       </div>
 
-      <ScrollArea className="flex-1 px-2 py-3">
+      <ScrollArea className="min-h-0 flex-1 px-2 py-3">
         <nav className="space-y-4">
           {GROUP_ORDER.map((group) => {
             const items = MODULES.filter((m) => m.group === group);
