@@ -1,0 +1,18 @@
+{
+  "name": "neighborx-chat-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Real-time neighborhood chat mini-service for NeighborX (socket.io on port 3003)",
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/socket.io": "^3.0.0"
+  }
+}

@@ -1,0 +1,264 @@
+// Shared NeighborX types
+
+export type ModuleKey =
+  | "dashboard"
+  | "feed"
+  | "marketplace"
+  | "businesses"
+  | "services"
+  | "jobs"
+  | "emergency"
+  | "complaints"
+  | "lostfound"
+  | "events"
+  | "assistant"
+  | "chat"
+  | "profile";
+
+export type VerificationLevel = 1 | 2 | 3 | 4 | 5;
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  role: string;
+  verifyMobile: boolean;
+  verifyEmail: boolean;
+  verifyAadhaar: boolean;
+  verifyAddress: boolean;
+  verifyBusiness: boolean;
+  rewardPoints: number;
+  area: string;
+  city: string;
+  district: string;
+  state: string;
+  society: string;
+}
+
+export interface Post {
+  id: string;
+  type: string;
+  content: string;
+  imageUrl?: string | null;
+  pollData?: string | null;
+  scope: string;
+  tag?: string | null;
+  authorId: string;
+  author: User;
+  likes: number;
+  comments: Comment[];
+  createdAt: string;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  postId: string;
+  authorId: string;
+  author: User;
+  createdAt: string;
+}
+
+export interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  condition: string;
+  imageUrl?: string | null;
+  location: string;
+  boosted: boolean;
+  status: string;
+  sellerId: string;
+  seller: User;
+  createdAt: string;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  address: string;
+  phone: string;
+  rating: number;
+  reviewCount: number;
+  imageUrl?: string | null;
+  verified: boolean;
+  featured: boolean;
+  offer?: string | null;
+  ownerId: string;
+}
+
+export interface Service {
+  id: string;
+  category: string;
+  providerName: string;
+  bio: string;
+  phone: string;
+  rating: number;
+  jobsDone: number;
+  hourlyRate: number;
+  avatar?: string | null;
+  verified: boolean;
+  available: boolean;
+}
+
+export interface ServiceBooking {
+  id: string;
+  serviceId: string;
+  userId: string;
+  user: User;
+  date: string;
+  slot: string;
+  note?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  jobType: string;
+  salary: string;
+  location: string;
+  category: string;
+  openings: number;
+  employerId: string;
+  employer: User;
+  createdAt: string;
+}
+
+export interface Emergency {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  location: string;
+  severity: string;
+  status: string;
+  reporterId: string;
+  reporter: User;
+  responders: number;
+  createdAt: string;
+}
+
+export interface Complaint {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  location: string;
+  imageUrl?: string | null;
+  status: string;
+  aiCategory?: string | null;
+  aiConfidence?: number | null;
+  reporterId: string;
+  reporter: User;
+  upvotes: number;
+  createdAt: string;
+}
+
+export interface LostFound {
+  id: string;
+  type: string;
+  category: string;
+  title: string;
+  description: string;
+  imageUrl?: string | null;
+  location: string;
+  reward: number;
+  status: string;
+  reporterId: string;
+  reporter: User;
+  createdAt: string;
+}
+
+export interface NXEvent {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  date: string;
+  time: string;
+  venue: string;
+  imageUrl?: string | null;
+  organizerId: string;
+  organizer: User;
+  rsvps: { id: string; status: string }[];
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  sender: User;
+  text: string;
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
+
+// ----- helpers -----
+export const CATEGORY_COLORS: Record<string, string> = {
+  ELECTRONICS: "bg-chart-1/15 text-chart-1",
+  FURNITURE: "bg-chart-2/15 text-chart-2",
+  VEHICLES: "bg-chart-3/15 text-chart-3",
+  FASHION: "bg-chart-5/15 text-chart-5",
+  BOOKS: "bg-chart-4/15 text-chart-4",
+  APPLIANCES: "bg-primary/15 text-primary",
+  GROCERY: "bg-chart-1/15 text-chart-1",
+  RESTAURANT: "bg-chart-3/15 text-chart-3",
+  CLINIC: "bg-destructive/15 text-destructive",
+  PHARMACY: "bg-chart-4/15 text-chart-4",
+  SALON: "bg-chart-5/15 text-chart-5",
+  GYM: "bg-primary/15 text-primary",
+};
+
+export function timeAgo(iso: string): string {
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const days = Math.floor(h / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+export function verificationBadges(u: {
+  verifyMobile: boolean;
+  verifyEmail: boolean;
+  verifyAadhaar: boolean;
+  verifyAddress: boolean;
+  verifyBusiness: boolean;
+}) {
+  const badges: { label: string; icon: string; level: number; active: boolean }[] = [
+    { label: "Mobile", icon: "📱", level: 1, active: u.verifyMobile },
+    { label: "Email", icon: "✉", level: 2, active: u.verifyEmail },
+    { label: "Aadhaar", icon: "🪪", level: 3, active: u.verifyAadhaar },
+    { label: "Address", icon: "🏠", level: 4, active: u.verifyAddress },
+    { label: "Business", icon: "🏢", level: 5, active: u.verifyBusiness },
+  ];
+  return badges;
+}
+
+export function inr(n: number): string {
+  return "₹" + n.toLocaleString("en-IN");
+}

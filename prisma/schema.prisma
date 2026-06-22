@@ -1,0 +1,281 @@
+// NeighborX — Hyperlocal Community & Commerce Super App
+// SQLite-backed schema (no enums / no arrays — use String with documented values)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  avatar        String?
+  bio           String?
+  // role: RESIDENT | BUSINESS | SERVICE_PROVIDER | EMPLOYER | SOCIETY_ADMIN | GOV | SUPER_ADMIN
+  role          String   @default("RESIDENT")
+  // verification bitmask levels: 1=mobile,2=email,3=aadhaar,4=address,5=business
+  verifyMobile  Boolean  @default(true)
+  verifyEmail   Boolean  @default(false)
+  verifyAadhaar Boolean  @default(false)
+  verifyAddress Boolean  @default(false)
+  verifyBusiness Boolean @default(false)
+  rewardPoints  Int      @default(0)
+  // neighborhood context
+  area          String   @default("Khair Nagar")
+  city          String   @default("Udgir")
+  district      String   @default("Latur")
+  state         String   @default("Maharashtra")
+  society       String   @default("Royal Residency")
+  createdAt     DateTime @default(now())
+
+  posts          Post[]
+  comments       Comment[]
+  reactions      Reaction[]
+  listings       Listing[]
+  businesses     Business[]
+  bookings       ServiceBooking[]
+  jobsPosted     Job[]        @relation("JobEmployer")
+  applications   JobApplication[]
+  emergencies    Emergency[]
+  complaints     Complaint[]
+  lostfound      LostFound[]
+  events         Event[]      @relation("EventOrganizer")
+  rsvps          RSVP[]
+  chatMessages   ChatMessage[]
+  notifications  Notification[]
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  // type: TEXT | IMAGE | VIDEO | POLL | EVENT | EMERGENCY
+  type        String   @default("TEXT")
+  content     String
+  imageUrl    String?
+  // JSON-ish poll data stored as String (question + options)
+  pollData    String?
+  scope       String   @default("SOCIETY") // SOCIETY | AREA | CITY
+  tag         String?  // e.g. Recommendation, Update, Question
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  likes       Int      @default(0)
+  comments    Comment[]
+  reactions   Reaction[]
+  createdAt   DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Reaction {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+  // emoji: 👍 ❤️ 🙏 😂 🔥
+  emoji    String @default("👍")
+}
+
+model Listing {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Int
+  // category: ELECTRONICS | FURNITURE | VEHICLES | FASHION | BOOKS | APPLIANCES | OTHER
+  category    String   @default("ELECTRONICS")
+  condition   String   @default("Used") // New | Like New | Used | Refurbished
+  imageUrl    String?
+  location    String   @default("Khair Nagar, Udgir")
+  boosted     Boolean  @default(false)
+  status      String   @default("AVAILABLE") // AVAILABLE | SOLD | RESERVED
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Business {
+  id          String   @id @default(cuid())
+  name        String
+  // category: GROCERY | RESTAURANT | CLINIC | PHARMACY | SALON | GYM | RETAIL | EDUCATION | OTHER
+  category    String   @default("RETAIL")
+  description String
+  address     String
+  phone       String
+  rating      Float    @default(4.5)
+  reviewCount Int      @default(0)
+  imageUrl    String?
+  verified    Boolean  @default(false)
+  featured    Boolean  @default(false)
+  offer       String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  // category: ELECTRICIAN | MAID | DRIVER | TUTOR | PLUMBER | CARPENTER | PAINTER | COOK | CLEANING | BEAUTY
+  category    String   @default("PLUMBER")
+  providerName String
+  bio         String
+  phone       String
+  rating      Float    @default(4.5)
+  jobsDone    Int      @default(0)
+  hourlyRate  Int      @default(250)
+  avatar      String?
+  verified    Boolean  @default(false)
+  available   Boolean  @default(true)
+  bookings    ServiceBooking[]
+}
+
+model ServiceBooking {
+  id         String   @id @default(cuid())
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  date       String
+  slot       String
+  note       String?
+  status     String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
+  createdAt  DateTime @default(now())
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String
+  // type: FULL_TIME | PART_TIME | CONTRACT | INTERNSHIP | REMOTE
+  jobType     String   @default("FULL_TIME")
+  salary      String   @default("₹15,000 - ₹25,000")
+  location    String   @default("Udgir")
+  category    String   @default("GENERAL") // DELIVERY | RETAIL | SALES | TECH | ACCOUNTS | GENERAL
+  openings    Int      @default(1)
+  employerId  String
+  employer    User     @relation("JobEmployer", fields: [employerId], references: [id])
+  applications JobApplication[]
+  createdAt   DateTime @default(now())
+}
+
+model JobApplication {
+  id       String @id @default(cuid())
+  jobId    String
+  job      Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant User @relation(fields: [applicantId], references: [id])
+  status   String @default("APPLIED") // APPLIED | REVIEWED | SHORTLISTED | REJECTED | HIRED
+  cover    String?
+  createdAt DateTime @default(now())
+}
+
+model Emergency {
+  id          String   @id @default(cuid())
+  // category: BLOOD | ACCIDENT | MEDICAL | MISSING_PERSON | FIRE | CRIME | WOMEN_SAFETY
+  category    String   @default("MEDICAL")
+  title       String
+  description String
+  location    String
+  // severity: LOW | MEDIUM | HIGH | CRITICAL
+  severity    String   @default("HIGH")
+  status      String   @default("ACTIVE") // ACTIVE | RESOLVED
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  responders  Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Complaint {
+  id          String   @id @default(cuid())
+  // category: ROAD | GARBAGE | WATER | ELECTRICITY | STREETLIGHT | DRAINAGE | OTHER
+  category    String   @default("GARBAGE")
+  title       String
+  description String
+  location    String
+  imageUrl    String?
+  // status: SUBMITTED | IN_PROGRESS | RESOLVED
+  status      String   @default("SUBMITTED")
+  // AI auto-classification confidence
+  aiCategory  String?
+  aiConfidence Float?
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  upvotes     Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model LostFound {
+  id          String   @id @default(cuid())
+  // type: LOST | FOUND
+  type        String   @default("LOST")
+  // category: PET | MOBILE | DOCUMENT | VEHICLE | KEYS | OTHER
+  category    String   @default("OTHER")
+  title       String
+  description String
+  imageUrl    String?
+  location    String
+  reward      Int      @default(0)
+  status      String   @default("OPEN") // OPEN | REUNITED | CLOSED
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  // category: SOCIAL | SPORTS | CULTURAL | RELIGIOUS | EDUCATION | MEETING
+  category    String   @default("SOCIAL")
+  date        String
+  time        String
+  venue       String
+  imageUrl    String?
+  organizerId String
+  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id])
+  rsvps       RSVP[]
+  createdAt   DateTime @default(now())
+}
+
+model RSVP {
+  id       String @id @default(cuid())
+  eventId  String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  status   String @default("GOING") // GOING | INTERESTED | NOT_GOING
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  // type: EMERGENCY | SOCIAL | MARKETPLACE | JOB | SYSTEM
+  type      String   @default("SYSTEM")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
