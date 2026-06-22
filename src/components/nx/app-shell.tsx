@@ -28,6 +28,12 @@ export function AppShell({ user }: { user: User }) {
   const Icon = mod?.icon;
   const isDashboard = active === "dashboard";
 
+  // Manually rehydrate persisted user preferences AFTER hydration so the
+  // client's first paint matches the server-rendered HTML exactly.
+  React.useEffect(() => {
+    void useNX.persist.rehydrate();
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header user={user} />

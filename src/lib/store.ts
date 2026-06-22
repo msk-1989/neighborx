@@ -50,6 +50,20 @@ export const useNX = create<NXState>()(
       openChat: (room) => set({ chatOpen: true, chatRoom: room }),
       closeChat: () => set({ chatOpen: false }),
     }),
-    { name: "neighborx-store" }
+    {
+      name: "neighborx-store",
+      // Prevent automatic synchronous rehydration on the client, which would
+      // cause the client's first render to differ from the server-rendered
+      // HTML (e.g. a different activeModule) and trigger React hydration
+      // mismatches that shift Radix useId() slots. We rehydrate manually in
+      // a useEffect after mount (see AppShell).
+      skipHydration: true,
+      // Only persist user preferences — never persist navigation state
+      // (activeModule) so the app always boots into the dashboard on both
+      // server and client.
+      partialize: (state) => ({
+        neighborhood: state.neighborhood,
+      }),
+    }
   )
 );
