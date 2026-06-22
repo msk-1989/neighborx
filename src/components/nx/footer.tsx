@@ -1,46 +1,148 @@
 import { Logo } from "./logo";
-import { Heart, ShieldCheck, Zap } from "lucide-react";
+import {
+  Heart,
+  ShieldCheck,
+  Zap,
+  MapPin,
+  Github,
+  Twitter,
+  Send,
+} from "lucide-react";
 
+/**
+ * Footer — only rendered on lg+ screens (see app-shell.tsx).
+ * Mobile users get the bottom tab bar instead.
+ *
+ * Layout: 12-col grid on lg, brand column spans 5, three link columns
+ * span 7 together. Bottom bar has a divider + copyright + location row.
+ */
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="mt-auto border-t bg-muted/30">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-4">
-          <div className="md:col-span-2">
+    <footer className="mt-auto border-t border-border/70 bg-muted/40">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        {/* Top grid */}
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12">
+          {/* Brand block — spans full width on mobile, 5 cols on lg */}
+          <div className="lg:col-span-5">
             <Logo />
-            <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               The Digital Operating System for Every Neighborhood in India.
               Verified communities, local commerce, jobs, services, and a civic
               safety network — all in one trusted super app.
             </p>
+            {/* Social row */}
+            <div className="mt-5 flex items-center gap-2">
+              {[
+                { Icon: Send, label: "Telegram" },
+                { Icon: Twitter, label: "Twitter" },
+                { Icon: Github, label: "GitHub" },
+              ].map(({ Icon, label }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="tap-feedback grid h-9 w-9 place-items-center rounded-lg border border-border/60 bg-background text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-semibold mb-2">Platform</div>
-            <ul className="space-y-1.5 text-sm text-muted-foreground">
-              <li>Community Feed</li>
-              <li>Marketplace</li>
-              <li>Jobs & Services</li>
-              <li>Emergency SOS</li>
-            </ul>
-          </div>
-          <div>
-            <div className="text-sm font-semibold mb-2">Why NeighborX</div>
-            <ul className="space-y-1.5 text-sm text-muted-foreground">
-              <li className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Verified neighbors
-              </li>
-              <li className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-primary" /> Hyperlocal & realtime
-              </li>
-              <li className="flex items-center gap-1.5">
-                <Heart className="h-3.5 w-3.5 text-primary" /> Trusted & inclusive
-              </li>
-            </ul>
+
+          {/* Link columns — span 7 cols together on lg, 2 cols on sm */}
+          <div className="lg:col-span-7">
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+              {/* Platform */}
+              <nav aria-label="Platform">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Platform
+                </h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  {["Community Feed", "Marketplace", "Jobs & Services", "Emergency SOS"].map(
+                    (item) => (
+                      <li key={item}>
+                        <a
+                          href="#"
+                          className="tap-feedback text-muted-foreground transition-colors hover:text-primary"
+                        >
+                          {item}
+                        </a>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </nav>
+
+              {/* Why NeighborX */}
+              <nav aria-label="Why NeighborX">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Why NeighborX
+                </h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                    <span>Verified neighbors</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <Zap className="h-4 w-4 shrink-0 text-primary" />
+                    <span>Hyperlocal &amp; realtime</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <Heart className="h-4 w-4 shrink-0 text-primary" />
+                    <span>Trusted &amp; inclusive</span>
+                  </li>
+                </ul>
+              </nav>
+
+              {/* Reach us */}
+              <nav aria-label="Reach us" className="col-span-2 sm:col-span-1">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Reach us
+                </h3>
+                <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>
+                      Udgir &middot; Latur
+                      <br />
+                      Maharashtra, India
+                    </span>
+                  </li>
+                  <li>
+                    <a
+                      href="mailto:hello@neighborx.in"
+                      className="tap-feedback transition-colors hover:text-primary"
+                    >
+                      hello@neighborx.in
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
           </div>
         </div>
-        <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t pt-4 text-xs text-muted-foreground sm:flex-row">
-          <div>© {new Date().getFullYear()} NeighborX · Made for India 🇮🇳</div>
-          <div>Udgir · Latur · Maharashtra</div>
+
+        {/* Bottom bar */}
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <div className="flex items-center gap-1.5">
+            <span>
+              &copy; {year} NeighborX &middot; Made for India
+            </span>
+            <span aria-hidden className="text-base leading-none">
+              🇮🇳
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#" className="tap-feedback transition-colors hover:text-primary">
+              Privacy
+            </a>
+            <a href="#" className="tap-feedback transition-colors hover:text-primary">
+              Terms
+            </a>
+            <span className="text-muted-foreground/60">v4.0</span>
+          </div>
         </div>
       </div>
     </footer>
