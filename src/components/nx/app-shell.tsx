@@ -24,6 +24,9 @@ import { Profile } from "./modules/profile";
 import { Reputation } from "./modules/reputation";
 import { NeighborhoodWatch } from "./modules/neighborhood-watch";
 import { ComingSoon } from "./modules/coming-soon";
+import { AdminPanel } from "./modules/admin-panel";
+import { IamProvider } from "@/lib/iam/use-iam";
+import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 export function AppShell({ user }: { user: User }) {
@@ -40,20 +43,27 @@ export function AppShell({ user }: { user: User }) {
   }, []);
 
   return (
+    <IamProvider initialRoles={["RESIDENT"]}>
     <div className="flex min-h-screen-dvh flex-col bg-background">
       <Header user={user} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1">
-        {/* desktop sidebar — self-start + max-h so it never overflows into the footer;
-            sticky keeps it pinned while the flex row is in view, then it scrolls away
-            cleanly when the footer comes into view (no overlap). */}
-        <aside className="sticky top-14 hidden max-h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start overflow-hidden border-r lg:block lg:top-16 lg:max-h-[calc(100dvh-4rem)]">
-          <Sidebar />
+        {/* desktop sidebar — definite height (viewport minus header) so the inner
+            ScrollArea gets a bounded height and scrolls. sticky top-16 keeps it
+            pinned while the flex row is in view; sticky clamping ensures the
+            aside's bottom never passes its containing block's bottom (= footer
+            top), so there is NO sidebar↔footer overlap. overflow-hidden clips
+            the inner scroll; the ScrollArea inside handles scrolling. */}
+        <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start overflow-hidden border-r lg:block lg:top-16 lg:h-[calc(100dvh-4rem)]">
+          <Sidebar uid={uid} />
         </aside>
 
         {/* main */}
         <main className="min-w-0 flex-1">
-          <div className="mx-auto max-w-5xl px-3 py-4 pb-tab-bar sm:px-5 sm:py-5 lg:pb-8">
-            {!isDashboard && !mod?.comingSoon && (
+          <div className={cn(
+            "mx-auto px-3 py-4 pb-tab-bar sm:px-5 sm:py-5 lg:pb-8",
+            active === "admin" ? "max-w-7xl" : "max-w-5xl",
+          )}>
+            {!isDashboard && !mod?.comingSoon && active !== "admin" && (
               <div className="mb-4 hidden items-center gap-3 sm:flex">
                 {Icon && (
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -214,6 +224,9 @@ export function AppShell({ user }: { user: User }) {
                     ]}
                   />
                 )}
+
+                {/* Admin Panel — Super Admin control center (RBAC-gated) */}
+                {active === "admin" && <AdminPanel uid={uid} />}
               </div>
             </React.Suspense>
           </div>
@@ -225,5 +238,6 @@ export function AppShell({ user }: { user: User }) {
       </div>
       <MobileTabBar />
     </div>
+    </IamProvider>
   );
 }

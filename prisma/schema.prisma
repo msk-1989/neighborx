@@ -59,6 +59,16 @@ model User {
   groupsOwned   Group[]     @relation("GroupOwner")
   achievements   UserAchievement[]
   watchAlerts    WatchAlert[]
+  // RBAC: a user can hold multiple roles (e.g. RESIDENT + BUSINESS_OWNER)
+  roles          UserRole[]
+  // admin-related
+  societiesAdmin Society[]    @relation("SocietyAdmin")
+  ticketsRequested SupportTicket[] @relation("TicketRequester")
+  ticketsAssigned SupportTicket[] @relation("TicketAssignee")
+  verificationsRequested VerificationRequest[] @relation("VerificationRequester")
+  reportsFiled   AbuseReport[]  @relation("ReportReporter")
+  reportsHandled AbuseReport[]  @relation("ReportHandler")
+  payments       Payment[]
 }
 
 model Post {
@@ -365,5 +375,250 @@ model WatchAlert {
   reporterId  String
   reporter    User     @relation(fields: [reporterId], references: [id])
   helpfulCount Int     @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// =====================================================================
+// IAM / RBAC — Identity & Access Management
+// =====================================================================
+// Pillar: IAM (Role-Based Access Control). Every screen, button, API and
+// action is controlled by Roles + Permissions. A user can hold multiple
+// roles; each role grants a set of permissions.
+
+// All possible roles (user-facing + 10-level admin hierarchy)
+model Role {
+  id          String   @id @default(cuid())
+  // code: GUEST | RESIDENT | VERIFIED_RESIDENT | BUSINESS_OWNER |
+  //       SERVICE_PROVIDER | EMPLOYER | PROPERTY_OWNER | VOLUNTEER |
+  //       SOCIETY_ADMIN | AREA_MODERATOR | CITY_MODERATOR | BUSINESS_ADMIN |
+  //       ORG_ADMIN | SUPPORT_ADMIN | OPERATIONS_ADMIN | REVENUE_ADMIN |
+  //       COMPLIANCE_ADMIN | SUPER_ADMIN
+  code        String   @unique
+  name        String
+  description String
+  // level: 0=user roles, 1-10=admin hierarchy (Society Admin=1 ... Super Admin=10)
+  level       Int      @default(0)
+  // category: USER | ADMIN
+  category    String   @default("USER")
+  isSystem    Boolean  @default(true) // system roles cannot be deleted
+  permissions RolePermission[]
+  users       UserRole[]
+  createdAt   DateTime @default(now())
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  // code: e.g. CREATE_POST, DELETE_POST, VERIFY_USER, MANAGE_CITY,
+  //       APPROVE_BUSINESS, VIEW_REVENUE, MANAGE_USERS, etc.
+  code        String   @unique
+  name        String
+  description String
+  // module: which feature area this permission belongs to
+  // COMMUNITY | MARKETPLACE | BUSINESS | SERVICE | JOB | PROPERTY |
+  // SAFETY | SOCIETY | CIVIC | NEWS | REWARDS | AI | FINANCE | CMS |
+  // SETTINGS | TRUST | IAM | SUPPORT | OPERATIONS | COMPLIANCE
+  module      String   @default("COMMUNITY")
+  // action: CREATE | READ | UPDATE | DELETE | APPROVE | VERIFY | MANAGE | VIEW
+  action      String   @default("READ")
+  roles       RolePermission[]
+  createdAt   DateTime @default(now())
+}
+
+// Many-to-many: Role <-> Permission
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+}
+
+// Many-to-many: User <-> Role (a user can hold multiple roles)
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  // scope: for scoped roles like SOCIETY_ADMIN / AREA_MODERATOR, the scope
+  // identifies the society/area/city the role applies to
+  scope     String?
+  grantedBy String?
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, roleId, scope])
+}
+
+// =====================================================================
+// Admin-ecosystem models
+// =====================================================================
+
+// Society — managed by Society Admin (Level 1)
+model Society {
+  id          String   @id @default(cuid())
+  name        String
+  address     String
+  area        String   @default("Khair Nagar")
+  city        String   @default("Udgir")
+  district    String   @default("Latur")
+  state       String   @default("Maharashtra")
+  // total units / flats
+  totalUnits  Int      @default(0)
+  adminId     String?
+  admin       User?    @relation("SocietyAdmin", fields: [adminId], references: [id])
+  visitors    Visitor[]
+  notices     SocietyNotice[]
+  createdAt   DateTime @default(now())
+}
+
+model Visitor {
+  id          String   @id @default(cuid())
+  societyId   String
+  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  visitorName String
+  visitorPhone String?
+  hostName    String
+  hostFlat    String
+  // status: PENDING | APPROVED | CHECKED_IN | CHECKED_OUT | DENIED
+  status      String   @default("PENDING")
+  purpose     String?
+  checkInTime DateTime?
+  checkOutTime DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model SocietyNotice {
+  id          String   @id @default(cuid())
+  societyId   String
+  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  // type: ANNOUNCEMENT | MAINTENANCE | MEETING | EMERGENCY
+  type        String   @default("ANNOUNCEMENT")
+  createdAt   DateTime @default(now())
+}
+
+// Support tickets — handled by Support Admin (Level 6)
+model SupportTicket {
+  id          String   @id @default(cuid())
+  // type: HELP | BUG | VERIFICATION | BILLING | ABUSE | OTHER
+  type        String   @default("HELP")
+  // status: OPEN | IN_PROGRESS | RESOLVED | CLOSED
+  status      String   @default("OPEN")
+  // priority: LOW | MEDIUM | HIGH | URGENT
+  priority    String   @default("MEDIUM")
+  subject     String
+  description String
+  requesterId String
+  requester   User     @relation("TicketRequester", fields: [requesterId], references: [id])
+  assigneeId  String?
+  assignee    User?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Verification requests — handled by Operations Admin (Level 7)
+model VerificationRequest {
+  id          String   @id @default(cuid())
+  // type: AADHAAR | ADDRESS | BUSINESS | SERVICE_PROVIDER | PROPERTY | FUNDRAISING
+  type        String
+  // status: PENDING | APPROVED | REJECTED
+  status      String   @default("PENDING")
+  requesterId String
+  requester   User     @relation("VerificationRequester", fields: [requesterId], references: [id])
+  // document URL / reference
+  documentRef String?
+  notes       String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+// Abuse reports — handled by Compliance Admin (Level 9)
+model AbuseReport {
+  id          String   @id @default(cuid())
+  // targetType: POST | COMMENT | LISTING | BUSINESS | USER | MESSAGE
+  targetType  String
+  targetId    String
+  reason      String
+  description String?
+  // status: PENDING | REVIEWING | ACTIONED | DISMISSED
+  status      String   @default("PENDING")
+  // action: NONE | WARNING | CONTENT_REMOVED | USER_SUSPENDED | USER_BANNED
+  action      String   @default("NONE")
+  reporterId  String
+  reporter    User     @relation("ReportReporter", fields: [reporterId], references: [id])
+  handlerId   String?
+  handler     User?    @relation("ReportHandler", fields: [handlerId], references: [id])
+  createdAt   DateTime @default(now())
+  handledAt   DateTime?
+}
+
+// Payments — managed by Revenue Admin (Level 8)
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  // type: SUBSCRIPTION | COMMISSION | REFUND | PAYOUT | LISTING_BOOST
+  type        String
+  amount      Float
+  currency    String   @default("INR")
+  // status: PENDING | SUCCESS | FAILED | REFUNDED
+  status      String   @default("PENDING")
+  // gateway: RAZORPAY | UPI | BANK_TRANSFER | WALLET
+  gateway     String   @default("RAZORPAY")
+  txnRef      String?
+  invoiceNo   String?
+  createdAt   DateTime @default(now())
+}
+
+// Subscriptions / plans
+model Subscription {
+  id          String   @id @default(cuid())
+  // plan: FREE | BUSINESS_PRO | SERVICE_PRO | EMPLOYER_PRO | SOCIETY_PRO | ENTERPRISE
+  plan        String   @default("FREE")
+  price       Float    @default(0)
+  billingCycle String  @default("MONTHLY") // MONTHLY | YEARLY
+  features    String   // JSON string of feature list
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// CMS pages — managed via Super Admin CMS module
+model CmsPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  // type: PAGE | BLOG | FAQ
+  type        String   @default("PAGE")
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Location master data — managed via Super Admin Settings module
+model Location {
+  id          String   @id @default(cuid())
+  // level: COUNTRY | STATE | CITY | AREA
+  level       String
+  name        String
+  parentId    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// Categories master data — managed via Super Admin Settings module
+model Category {
+  id          String   @id @default(cuid())
+  // module: MARKETPLACE | BUSINESS | SERVICE | JOB | PROPERTY | EVENT
+  module      String
+  name        String
+  icon        String?
+  active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 }

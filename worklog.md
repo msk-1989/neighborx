@@ -363,3 +363,73 @@ Stage Summary:
 - Footer spans the full page width at the bottom with all 4 sections (brand/Platform/Why NX/Reach us) fully visible.
 - Live on production: https://my-project-pied-six.vercel.app
 - Lint clean. Minimal change (4 lines in app-shell.tsx). No logic changes — pure layout/CSS fix.
+
+---
+Task ID: 5-super-admin-panel
+Agent: full-stack-developer
+Task: Build Super Admin panel UI with 16 module sections + admin API routes
+
+Work Log:
+- Read worklog.md (Tasks 15-a through 7-sidebar-footer-overlap) to understand the existing NeighborX app architecture (Next.js 16 + App Router + TypeScript + Tailwind + shadcn/ui + Prisma/Neon Postgres). Confirmed the IAM/RBAC system (roles.ts, server.ts, use-iam.tsx), the seeded SUPER_ADMIN demo user (Arjun, id cmqpauk7p0000q0izqj137l7k), and the existing module pattern (api wrapper, toast from sonner, UserAvatar, tap-feedback, no-scrollbar, brand-gradient-soft).
+- Read prisma/schema.prisma in full to learn every field name on the 15 admin-related models (User, Post, Business, Service, Job, Emergency, Complaint, Society, Visitor, SocietyNotice, VerificationRequest, AbuseReport, SupportTicket, Payment, Subscription, CmsPage, Location, Category, Role, Permission, RolePermission, UserRole).
+- Read src/lib/api.ts — confirmed the `api<T>(path, init?)` single-function wrapper signature (NOT an object with .get/.post). Read src/lib/iam/server.ts (requirePermission, requireAnyPermission, assignRole, removeRole) and src/lib/iam/roles.ts (PERMISSION constants, ROLE codes, ROLE_META, ROLE_PERMISSIONS).
+- Read existing module patterns (marketplace.tsx, events.tsx, dashboard.tsx, groups/route.ts, feed/route.ts) for code conventions and shadcn component usage.
+- Created `/agent-ctx/` directory (empty — used for inter-agent context per orchestrator rules).
+
+- Built 22 admin API routes under `/home/z/my-project/src/app/api/admin/`:
+  1. `stats/route.ts` (GET) — aggregates 14 counts (users/posts/businesses/services/jobs/listings/emergencies/complaints/groups/events/watchAlerts/pendingVerifications/pendingReports/openTickets/revenue) + recent 5 posts/users/reports. Requires VIEW_ADMIN_PANEL.
+  2. `users/route.ts` (GET) — paginated users with `roles.role` include, search by name/email/phone, filter by role code, returns {users,total,limit,offset}. Requires MANAGE_USERS.
+  3. `users/[id]/route.ts` (PATCH) — {action: "verify"|"unverify"|"verifyMobile"|"unverifyMobile"} toggles verification flags. Requires VERIFY_USER or MANAGE_USERS.
+  4. `users/[id]/roles/route.ts` (POST) — {roleCode, scope?, action: "assign"|"remove"} via assignRole/removeRole helpers. Requires ASSIGN_ROLES.
+  5. `posts/route.ts` (GET) + `posts/[id]/route.ts` (DELETE) — paginated posts with author + comment count, supports type/scope filters. DELETE requires DELETE_ANY_POST.
+  6. `businesses/route.ts` (GET) + `businesses/[id]/route.ts` (PATCH {verified?, featured?}) — requires APPROVE_BUSINESS.
+  7. `services/route.ts` (GET) + `services/[id]/route.ts` (PATCH {verified?, available?}) — requires APPROVE_SERVICE_PROVIDER. Note: Service model has no createdAt, so ordered by rating desc.
+  8. `jobs/route.ts` (GET) — with employer + application count via `_count.applications`.
+  9. `emergencies/route.ts` (GET) + `emergencies/[id]/route.ts` (PATCH {status}) — GET returns both emergencies + watchAlerts arrays. PATCH tries emergency table first, falls back to watchAlert. Requires VERIFY_ALERT or VIEW_SOS.
+  10. `complaints/route.ts` (GET) + `complaints/[id]/route.ts` (PATCH {status}) — requires MANAGE_COMPLAINTS.
+  11. `societies/route.ts` (GET) — with admin + visitor/notice counts + visitorsToday count (group-by today). `visitors/route.ts` (GET) recent 30 across all societies. `notices/route.ts` (GET) all society notices with society info. Require MANAGE_SOCIETY/MANAGE_VISITORS/MANAGE_NOTICES.
+  12. `verifications/route.ts` (GET) + `verifications/[id]/route.ts` (PATCH {status: APPROVED|REJECTED, notes?}) — sets reviewedBy=uid, reviewedAt=now, and mirrors approved verifications onto user verify flags (AADHAAR→verifyAadhaar, ADDRESS→verifyAddress, BUSINESS→verifyBusiness). Requires VERIFY_USER.
+  13. `reports/route.ts` (GET) + `reports/[id]/route.ts` (PATCH {status, action?}) — sets handlerId=uid, handledAt=now. Statuses: REVIEWING/ACTIONED/DISMISSED. Actions: NONE/WARNING/CONTENT_REMOVED/USER_SUSPENDED/USER_BANNED. Requires REVIEW_REPORTS.
+  14. `tickets/route.ts` (GET) + `tickets/[id]/route.ts` (PATCH {status?, priority?, assigneeId?, resolution?}) — auto-fills resolution if RESOLVED without one. Requires HANDLE_TICKETS.
+  15. `payments/route.ts` (GET) — with user + groupBy status aggregation (totalRevenue/totalSuccessful/totalPending/totalRefunded). `subscriptions/route.ts` (GET) all plans. Requires VIEW_REVENUE/MANAGE_SUBSCRIPTIONS.
+  16. `cms/route.ts` (GET) — all CmsPage entries. `locations/route.ts` (GET) — all locations grouped by level (COUNTRY/STATE/CITY/AREA). `categories/route.ts` (GET) — all categories grouped by module. Require MANAGE_CMS/MANAGE_LOCATIONS/MANAGE_CATEGORIES.
+  17. `roles-matrix/route.ts` (GET) — all roles with permission codes, user count, expectedPermissions from ROLE_PERMISSIONS, and ROLE_META. Requires VIEW_ADMIN_PANEL.
+  18. `listings/route.ts` (GET) + `listings/[id]/route.ts` (DELETE / PATCH {boosted?, status?}) — for marketplace admin actions. DELETE requires DELETE_ANY_LISTING.
+
+- Built `src/components/nx/modules/admin-panel.tsx` (~2150 lines):
+  - `"use client"` component `AdminPanel({ uid }: { uid: string })`.
+  - Banner card with `brand-gradient` background, Crown icon, "Super Admin Panel" title, "Full access" badge.
+  - Vertical `Tabs` with `TabsList` styled `lg:w-56 lg:flex-col` for desktop rail, `no-scrollbar overflow-x-auto` for mobile horizontal strip.
+  - 16 `TabsContent` sections, each a dedicated sub-component with its own `useAdminData(url, deps)` hook (auto-fetches + reloads + loading state).
+  - **1. OverviewSection** — 14 stat cards (users/posts/businesses/services/jobs/listings/emergencies/complaints/groups/events/pendingVerifications/pendingReports/openTickets/revenue) in a responsive `grid sm:grid-cols-2 lg:grid-cols-4`, plus 3 activity-feed Cards (recent posts / new users / abuse reports).
+  - **2. UsersSection** — search input + role Select filter + paginated table (avatar, name/email, role badges, tier, rewardPoints, joined, verify/roles actions). Includes pagination controls + `RoleAssignmentDialog` for assigning/removing roles via the `/api/admin/users/[id]/roles` POST route.
+  - **3. CommunitySection** — type & scope filter chips, paginated posts table with delete action via DELETE /api/admin/posts/[id].
+  - **4. TrustSection** — verification requests table with Approve/Reject buttons; 4 stat cards (pending/approved/rejected/total).
+  - **5. MarketplaceSection** — listings table with delete + boost-toggle actions via /api/admin/listings/[id]; 4 stat cards including GMV (sum of prices).
+  - **6. BusinessesSection** — table with verify-toggle (ShieldCheck icon) + feature-toggle (Star icon) actions; stats include verified/featured/avg-rating.
+  - **7. ServicesSection** — table with verify-toggle + available-toggle actions; stats include verified/available/avg-rating/bookings.
+  - **8. JobsSection** — read-only table with employer + applications count; stats include total openings, total applications, unique companies.
+  - **9. PropertySection** — styled "coming soon" card with Building2 icon + "Phase 3 · In Roadmap" badge.
+  - **10. SafetySection** — combined emergencies + watch alerts tables; each row has resolve/activate toggle via PATCH /api/admin/emergencies/[id].
+  - **11. SocietySection** — 3 cards: societies table (with admin/units/visitorsToday/notices), recent visitors table, society notices list.
+  - **12. CivicSection** — complaints table with inline status Select (SUBMITTED/IN_PROGRESS/RESOLVED) per row; shows AI category + confidence.
+  - **13. FinanceSection** — 4 revenue stat cards (totalRevenue/successful/pending/refunded) + payments table + subscription plans grid (with parsed JSON features list per plan).
+  - **14. ComplianceSection** — abuse reports table with Review/Dismiss/Takedown buttons (sets status REVIEWING/DISMISSED/ACTIONED + action CONTENT_REMOVED).
+  - **15. SupportSection** — tickets table with "Assign me"/"Resolve"/"Close" buttons per row; stats include open/in-progress/resolved/total.
+  - **16. SettingsSection** — 4 internal sub-tabs: Roles & Permissions matrix (expandable accordion showing all 18 roles with permission counts + user counts + permission chips), Locations master (4 cards: countries/states/cities/areas), Categories master (grouped by module with chip clouds), CMS pages table.
+  - Reusable components: `StatCard`, `SectionHeader`, `SkeletonGrid`, `EmptyState`, `StatusBadge`, `PriorityBadge`, `useAdminData` hook, `callAdmin` helper. All buttons have `tap-feedback`. All long tables wrapped in `max-h-* overflow-y-auto scrollbar-thin`. All horizontal chip strips use `no-scrollbar overflow-x-auto`. Emojis used liberally for empty states.
+  - Component NOT wired into app-shell.tsx per task instructions — orchestrator handles that. Exported as named `AdminPanel` accepting `{ uid }: { uid: string }`.
+
+- Verification:
+  - `bun run lint` — clean (0 errors, 0 warnings) after fixing 3 empty-interface errors (`interface AdminX extends X {}` → `type AdminX = X`) and 1 unused eslint-disable directive.
+  - `bunx tsc --noEmit` — clean after fixing 2 type errors: AdminUser missing `createdAt` (added to interface), AdminTicket missing `assigneeId`/`requesterId` (added).
+  - Hit all 21 admin GET routes with curl + Arjun's uid — all returned 200. Confirmed 400 for missing uid, 403 for fake uid.
+  - Tested PATCH /api/admin/users/[id] with action=verify — returned 200 with updated user.
+  - Created temporary `/api/admin/compile-test/route.ts` that imports AdminPanel — returned 200 confirming the component compiles cleanly. Deleted the temp route after.
+  - dev.log shows all admin routes compiling and responding successfully (compile times 30-700ms each). No runtime errors observed.
+
+Stage Summary:
+- **22 admin API routes** created under `src/app/api/admin/`, all RBAC-secured via `requirePermission` / `requireAnyPermission` from `@/lib/iam/server`. Every route accepts `?uid=<adminUserId>` query param, verifies the relevant PERMISSION code, and returns JSON. Routes cover: stats, users (list + patch + role assign), posts (list + delete), listings (list + delete + patch), businesses (list + patch), services (list + patch), jobs (list), emergencies (list + patch), complaints (list + patch), societies + visitors + notices (lists), verifications (list + patch with auto-mirror to user verify flags), reports (list + patch with handler tracking), tickets (list + patch with assign/resolve/close), payments + subscriptions (lists with revenue aggregation), cms + locations + categories (lists grouped), roles-matrix (with permissions + user counts).
+- **AdminPanel component** (~2150 lines, `src/components/nx/modules/admin-panel.tsx`) — single-file `"use client"` component with all 16 module sections, vertical tab rail on lg+, horizontal scrollable strip on mobile. Each section fetches its own data, has loading skeletons + empty states + stat cards + shadcn Tables wrapped in scrollable containers. All admin actions (delete/verify/approve/reject/assign/resolve/etc.) wire to the admin API routes via the `api` wrapper and toast feedback on success/error.
+- **Lint clean** (0 errors, 0 warnings) and **tsc clean** (0 errors). All 21 GET routes verified returning 200 with the demo SUPER_ADMIN user; 400 for missing uid; 403 for non-admin uid; PATCH actions return 200 with updated records.
+- Component is exported as named `AdminPanel` accepting `{ uid }: { uid: string }` — ready for the orchestrator to wire into `app-shell.tsx` via a new "admin" ModuleKey.

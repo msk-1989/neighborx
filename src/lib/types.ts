@@ -25,7 +25,9 @@ export type ModuleKey =
   | "borrow"
   | "commerce"
   | "volunteer"
-  | "skills";
+  | "skills"
+  // Admin (Super Admin panel — only visible to users with VIEW_ADMIN_PANEL)
+  | "admin";
 
 export type VerificationLevel = 1 | 2 | 3 | 4 | 5;
 

@@ -27,6 +27,8 @@ import {
   ShoppingBasket,
   HandHeart,
   GraduationCap,
+  // Admin
+  Crown,
 } from "lucide-react";
 
 export interface ModuleDef {
@@ -34,7 +36,7 @@ export interface ModuleDef {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   desc: string;
-  group: "home" | "community" | "trust" | "safety" | "commerce" | "civic" | "ai" | "you" | "coming-soon";
+  group: "home" | "community" | "trust" | "safety" | "commerce" | "civic" | "ai" | "you" | "coming-soon" | "admin";
   /** Product roadmap phase — drives the "Phase N" badge in the sidebar */
   phase: 1 | 2 | 3 | 4;
   /** If true, module is a placeholder with no implementation yet */
@@ -89,6 +91,9 @@ export const MODULES: ModuleDef[] = [
   { key: "carpool", label: "Carpool & Mobility", icon: Car, desc: "Office, school, shared rides", group: "coming-soon", phase: 4, comingSoon: true },
   { key: "borrow", label: "Borrow & Lend", icon: PackageOpen, desc: "Books, tools, equipment sharing", group: "coming-soon", phase: 4, comingSoon: true },
   { key: "skills", label: "Skill Exchange", icon: GraduationCap, desc: "Language, music, computer training", group: "coming-soon", phase: 4, comingSoon: true },
+
+  // ── Admin (Super Admin panel — only visible to users with VIEW_ADMIN_PANEL permission) ──
+  { key: "admin", label: "Admin Panel", icon: Crown, desc: "Full platform control center", group: "admin", phase: 1 },
 ];
 
 export const GROUP_LABELS: Record<ModuleDef["group"], string> = {
@@ -101,6 +106,7 @@ export const GROUP_LABELS: Record<ModuleDef["group"], string> = {
   ai: "AI",
   you: "",
   "coming-soon": "Coming Soon · Roadmap",
+  admin: "Administration",
 };
 
 // Order in which groups appear in the sidebar
@@ -113,6 +119,7 @@ export const GROUP_ORDER: ModuleDef["group"][] = [
   "civic",
   "ai",
   "coming-soon",
+  "admin",
 ];
 
 export const PHASE_LABELS: Record<number, string> = {

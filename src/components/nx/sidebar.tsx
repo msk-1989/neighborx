@@ -1,17 +1,21 @@
 "use client";
 
+import * as React from "react";
 import { useNX } from "@/lib/store";
-import { MODULES, GROUP_LABELS, GROUP_ORDER, PHASE_LABELS } from "./modules-config";
+import { MODULES, GROUP_LABELS, GROUP_ORDER } from "./modules-config";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Logo } from "./logo";
-import type { ModuleDef } from "./modules-config";
 import { ShieldCheck } from "lucide-react";
+import { useIam } from "@/lib/iam/use-iam";
+import { PERMISSION } from "@/lib/iam/roles";
 
-export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function Sidebar({ onNavigate, uid }: { onNavigate?: () => void; uid?: string }) {
   const active = useNX((s) => s.activeModule);
   const setModule = useNX((s) => s.setModule);
   const nb = useNX((s) => s.neighborhood);
+  const iam = useIam();
+  const canViewAdmin = iam.hasPermission(PERMISSION.VIEW_ADMIN_PANEL);
 
   return (
     <div className="flex h-full flex-col">
@@ -30,6 +34,26 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div className="text-xs text-muted-foreground">
           {nb.area}, {nb.city}
         </div>
+        {/* Admin badge if user is an admin */}
+        {iam.isAdmin && (
+          <div className="mt-2 flex items-center gap-1.5">
+            {iam.roleMeta
+              .filter((r) => r.category === "ADMIN")
+              .slice(0, 3)
+              .map((r) => (
+                <span
+                  key={r.code}
+                  className={cn(
+                    "rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                    r.color,
+                  )}
+                  title={r.description}
+                >
+                  {r.emoji} {r.name}
+                </span>
+              ))}
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1 px-2 py-3">
@@ -37,6 +61,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           {GROUP_ORDER.map((group) => {
             const items = MODULES.filter((m) => m.group === group);
             if (!items.length) return null;
+            // Hide the admin group entirely if the user can't view the admin panel
+            if (group === "admin" && !canViewAdmin) return null;
             return (
               <div key={group}>
                 <div className="flex items-center justify-between px-2 pb-1.5">
@@ -46,6 +72,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   {group === "coming-soon" && (
                     <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-600 dark:text-amber-400">
                       Roadmap
+                    </span>
+                  )}
+                  {group === "admin" && (
+                    <span className="rounded bg-fuchsia-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-fuchsia-600 dark:text-fuchsia-400">
+                      RBAC
                     </span>
                   )}
                 </div>
@@ -65,7 +96,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                           isActive
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "hover:bg-accent text-foreground/80 hover:text-foreground",
-                          m.comingSoon && !isActive && "opacity-70"
+                          m.comingSoon && !isActive && "opacity-70",
+                          m.group === "admin" && !isActive && "text-fuchsia-700 dark:text-fuchsia-400",
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
