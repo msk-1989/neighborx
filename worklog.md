@@ -327,3 +327,39 @@ Stage Summary:
 - Live on production: https://my-project-pied-six.vercel.app (footer visible on lg+ screens; mobile uses the bottom tab bar as before).
 - Local dev env restored (.env.local with direct Neon connection for dev; Vercel uses pooled connection for serverless).
 - Lint clean. No logic changes — pure layout/className refactor.
+
+---
+Task ID: 7-sidebar-footer-overlap
+Agent: orchestrator (Z.ai Code)
+Task: Fix sidebar overlapping/messing with footer (user: "still its same footer and sidebar is messing with each other")
+
+Work Log:
+- User reported the sidebar and footer are still messing with each other. Took a full-page screenshot of the live Vercel deployment and analyzed via VLM.
+- VLM diagnosis: "The sidebar extends to the bottom of the page, covering the left portion of the footer. The sidebar does not stop before the footer, so the footer cannot expand to its full width."
+- Root cause analysis in src/components/nx/app-shell.tsx:
+  - The <aside> had className "sticky top-14 hidden h-aside-dvh w-64 shrink-0 border-r lg:block lg:top-16"
+  - h-aside-dvh = calc(100dvh - 4rem) = a FIXED height equal to viewport minus header
+  - The aside lives inside <div className="mx-auto flex w-full max-w-[1400px] flex-1"> whose height = viewport - header - footer (due to flex-1 in the root min-h-screen-dvh column)
+  - So the aside (100dvh - 4rem) was TALLER than its flex-row container by ~footer-height
+  - Combined with sticky top-16, the aside's bottom edge sat at exactly viewport-bottom (4rem + (100dvh-4rem) = 100dvh), so it stayed pinned and overlapped the footer whenever the footer scrolled into view
+- Fix applied (1 file, 4 insertions, 2 deletions):
+  - Removed fixed h-aside-dvh (was forcing the overflow)
+  - Added self-start (prevents the aside from stretching to fill the flex row's cross-axis)
+  - Added max-h-[calc(100dvh-3.5rem)] base / lg:max-h-[calc(100dvh-4rem)] (caps sidebar at viewport height, matching the sticky top offset)
+  - Added overflow-hidden (inner ScrollArea handles internal scrolling)
+  - Kept sticky top-14 lg:top-16: sidebar stays pinned while its flex-row containing block is in view, then scrolls away cleanly when the footer comes into view — NO overlap
+- Ran `bun run lint` — clean, no errors.
+- Committed as "fix(layout): sidebar overlapping footer — use self-start + max-h instead of fixed h-aside-dvh" (commit 5ec25d5).
+- Deployed to Vercel production via `npx vercel deploy --prod --yes --token <token>` — build succeeded in 41s.
+  - Production URL: https://my-project-pied-six.vercel.app
+- Browser-verified the live deployment via VLM on a full-page screenshot:
+  - "The sidebar stops above the footer, letting the footer span the full width cleanly (no overlap/coverage)."
+  - "The footer's leftmost column (with the NeighborX logo) is fully visible — it is not hidden behind the sidebar."
+  - "The sidebar's bottom edge ends just above the footer, with a clear gap between the sidebar's bottom and the footer's top."
+  - "No pixel where sidebar and footer overlap. Footer's top border spans the full page width without any bleed from the sidebar's white background."
+
+Stage Summary:
+- Sidebar↔footer overlap fully resolved. The sidebar now respects its flex-container boundary and scrolls away cleanly when the footer enters the viewport.
+- Footer spans the full page width at the bottom with all 4 sections (brand/Platform/Why NX/Reach us) fully visible.
+- Live on production: https://my-project-pied-six.vercel.app
+- Lint clean. Minimal change (4 lines in app-shell.tsx). No logic changes — pure layout/CSS fix.
