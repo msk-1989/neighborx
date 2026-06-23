@@ -30,25 +30,28 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NeighborX — India's Hyperlocal Community & Commerce Super App",
+  title: "NeighborX — The Neighborhood Operating System for India",
   description:
-    "Your Neighborhood. Your Community. Your Marketplace. Verified local communities, marketplace, jobs, services, businesses, and emergency network — all in one app.",
+    "A local search engine, hyperlocal yellow pages, trusted commerce network, and community safety net — 16 pillars, one verified app, society-first. Built for every Indian neighborhood.",
   keywords: [
     "NeighborX",
+    "neighborhood operating system",
     "hyperlocal",
-    "neighborhood",
+    "yellow pages",
+    "local search",
     "community",
     "marketplace",
     "local jobs",
+    "reels",
     "India",
   ],
   authors: [{ name: "NeighborX" }],
   // Favicon is generated from src/app/icon.svg (the NeighborX house logo on
   // the brand emerald→amber gradient). No external icon URL needed.
   openGraph: {
-    title: "NeighborX — Hyperlocal Community Super App",
+    title: "NeighborX — The Neighborhood Operating System for India",
     description:
-      "The Digital Operating System for Every Neighborhood in India.",
+      "A local search engine, hyperlocal yellow pages, trusted commerce network, and community safety net — 16 pillars, one verified app.",
     siteName: "NeighborX",
     type: "website",
   },

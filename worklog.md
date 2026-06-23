@@ -1243,3 +1243,66 @@ Stage Summary:
 - ✅ Search returns cross-type results (businesses, yellow pages, services, etc.).
 - ⚠️ Browser visual verification deferred due to sandbox memory constraints (Chrome + dev server exceed cgroup limit). The user can verify visually via the Preview Panel.
 - 🔑 KEY INSIGHT for future agents: in this sandbox, you must `pkill -f chrome` BEFORE starting `next dev` to free ~1.3GB of memory. And you must use `env -u DATABASE_URL` to override the stale shell env var. The dev server needs `NODE_OPTIONS="--max-old-space-size=2048"` to survive route compilation.
+
+---
+Task ID: 6
+Agent: main (Z.ai Code)
+Task: Update landing page to reflect the expanded NeighborX vision (Neighborhood Operating System + Local Search Engine + Yellow Pages + Commerce Network) and the newly shipped modules (Hyperlocal Reels, Yellow Pages, Neighborhood Search, Digital Identity)
+
+Work Log:
+- Read /home/z/my-project/worklog.md tail to absorb prior context: Reels backend+frontend (Task 2-a/2-b), Reels hyperlocal refinement (Task 1 refinement), Yellow Pages (Task 4-a), Neighborhood Search (Task 4-b), dashboard roadmap fix (Task 1), lint+verify (Task 5). User's product vision: NeighborX is a Neighborhood Operating System, not just a Nextdoor competitor — 16 pillars including new Media (Reels), Yellow Pages, Local Search Engine, Digital Identity, Advertising & Revenue.
+- Read the existing src/components/nx/landing-page.tsx (1033 lines) in full to understand the current structure: hero with "India's hyperlocal super app" badge + mock feed (SOS + post + marketplace), 12 FEATURES, ROADMAP_FEATURES showing "Coming soon" for Phase 3 & 4 (now stale — those are LIVE), HOW_IT_WORKS (3 steps), 4 ROLE_SECTIONS (Residents/Businesses/Service Providers/Employers), 6 TESTIMONIALS, 3 PRICING tiers, 8 FAQS, safety spotlight, final CTA, footer.
+- Read src/components/nx/modules-config.ts to get the canonical module list (27 modules across groups: home, community, safety, trust, commerce, civic, ai, discovery). Confirmed the 4 new modules: reels, yellowpages, search + the digital identity concept.
+- Read src/components/nx/footer.tsx (152 lines) — marketing footer with Platform / Why NeighborX / Reach us columns.
+- Read src/app/layout.tsx metadata — title was "NeighborX — India's Hyperlocal Community & Commerce Super App" (didn't match the new positioning).
+- Rewrote src/components/nx/landing-page.tsx completely (~1130 lines) with the expanded vision:
+  1. **Imports**: added Clapperboard, BookOpen, Megaphone, QrCode, Fingerprint, Layers, Compass, Bot, ShieldAlert (for the new pillars/features).
+  2. **NAV_LINKS**: replaced "Features/How it works/For You/Pricing/FAQ" with "16 Pillars/Features/How it works/For You/Pricing/FAQ" (added #pillars anchor).
+  3. **TRUST_STATS**: changed first stat from "12K+ Verified neighbors" to "27+ Modules across 16 pillars" to lead with the breadth of the platform.
+  4. **PILLARS array (NEW)**: 16 pillars grouped as — Community (5 modules), Safety (2), Trust & Verification (2), Marketplace (1), Local Services (1), Jobs (1), Verified Businesses (1), Property & Rentals (1), Society Management (1), Civic Complaints (1), AI Assistant (1), Community Programs (5), Hyperlocal Reels (NEW), Yellow Pages (NEW), Neighborhood Search (NEW), Digital Identity (NEW). The 4 new pillars carry an `isNew: true` flag that renders a "NEW" badge.
+  5. **FEATURES array**: expanded from 12 to 16 — added Neighborhood Search, Hyperlocal Yellow Pages, Hyperlocal Reels, Digital Identity. Kept the rest but refreshed copy to reference the new modules (e.g. Businesses now mentions Yellow Pages).
+  6. **NEW_LAUNCHES array (replaces ROADMAP_FEATURES)**: 6 recently-shipped modules (Reels, Yellow Pages, Search, Digital Identity, Society Management, Property) shown as "Just shipped" — no more misleading "Coming soon" framing.
+  7. **COMING_NEXT array (NEW)**: 3 items on the roadmap (Hyperlocal Ads Platform, Digital Visiting Cards, Local Influencer Program) — honest "coming next" instead of fake "coming soon" for already-shipped features.
+  8. **HOW_IT_WORKS**: step 3 copy updated from "Connect & thrive" to "Discover, connect & thrive" + mentions search/yellow pages/reels.
+  9. **ROLE_SECTIONS**: expanded from 4 to 6 — added "For Creators" (hyperlocal reels, proximity AI ranking, local influencer badge) and "For Society Admins" (visitor management, maintenance, notices, polls, facility booking). Updated existing roles' points to reference Yellow Pages, visiting cards, search.
+  10. **TESTIMONIALS**: updated Ravi's quote to mention Yellow Pages, Anita's to mention digital visiting card with QR, added a NEW testimonial from Sneha Patil about Reels driving actual client leads ("Not Instagram — actual neighbors"), updated Vijay's to mention unified search, Mahesh's to mention unified search.
+  11. **PRICING**: Free tier now explicitly includes "Hyperlocal Reels — view & post", "Neighborhood Search & Yellow Pages". Business Pro adds "Yellow Pages entry" + "Digital visiting card with QR code" + "Featured in Neighborhood Search results". Service Pro adds "Yellow Pages entry" + "Digital visiting card with WhatsApp share" + "Featured in service search & Reels ranking".
+  12. **FAQS**: expanded from 8 to 12 — added "What makes NeighborX different from Nextdoor or WhatsApp groups?", "How are the Hyperlocal Reels different from Instagram Reels?", "What is the difference between Businesses and Yellow Pages?", "What does the Neighborhood Search search across?", "What's coming next on the roadmap?". Updated the "Is NeighborX free?" answer to mention Reels/Yellow Pages/Search.
+  13. **Hero section**: badge changed from "India's hyperlocal super app" to "The Neighborhood Operating System for India". H1 changed from "Your Neighborhood. Built on Trust." to "Your Neighborhood. Search. Trust. Thrive." (3 verbs reflecting the 3 pillars: search engine + trust + commerce/community). Subcopy rewritten to lead with "A local search engine, hyperlocal yellow pages, trusted commerce network, and community safety net".
+  14. **Hero mockup**: replaced the 3-card feed (SOS + post + marketplace) with a richer stack showing the expanded vision — added a unified search bar in the mock header, a Yellow Pages card (Dr. Rao Clinic), a Reels preview card (Sneha's AC repair reel with "Society-first" tag), kept the SOS alert. The mock header now shows a search input "Search neighbors, businesses, reels…".
+  15. **NEW 16 PILLARS section** (id="pillars"): 4-col grid of all 16 pillar cards with icon, name, module count, description, and "NEW" badge on the 4 new pillars. Below it, the "Just shipped" card (NEW_LAUNCHES grid) + "Coming next" card (COMING_NEXT list). This replaces the old stale "Coming soon · Phase 3 & 4" roadmap teaser.
+  16. **Features section**: changed grid from 3-col to 4-col (since there are now 16 features) for better density.
+  17. **Final CTA**: subcopy updated to "your local search engine, your yellow pages — one tap away". Trust badges row updated to show "16 pillars · 27+ modules" instead of "4.8/5 rating".
+  18. **Section backgrounds**: alternated bg-background / bg-muted/30 for visual rhythm (pillars=muted, features=background, how-it-works=muted, for-you=background, safety=muted, testimonials=background, pricing=muted, faq=background, final-cta=muted).
+- Updated src/components/nx/footer.tsx:
+  - Added imports: Compass, BookOpen, Clapperboard, Layers.
+  - Brand description rewritten: "The Neighborhood Operating System for India. A local search engine, hyperlocal yellow pages, trusted commerce network, and community safety net — 16 pillars, one verified app, society-first."
+  - Platform nav column: replaced the 4 plain text links ("Community Feed", "Marketplace", "Jobs & Services", "Emergency SOS") with 4 icon-prefixed links pointing to #pillars: Neighborhood Search (Compass), Yellow Pages (BookOpen), Hyperlocal Reels (Clapperboard), Marketplace (Layers).
+  - Why NeighborX column: changed "Trusted & inclusive" to "Society-first, not global" to reinforce the differentiator.
+- Updated src/app/layout.tsx metadata:
+  - title: "NeighborX — The Neighborhood Operating System for India" (was "NeighborX — India's Hyperlocal Community & Commerce Super App").
+  - description: rewrote to lead with "A local search engine, hyperlocal yellow pages, trusted commerce network, and community safety net — 16 pillars, one verified app, society-first."
+  - keywords: added "neighborhood operating system", "yellow pages", "local search", "reels".
+  - openGraph.title + description: aligned with the new positioning.
+- Ran `bun run lint` — clean (0 errors, 0 warnings).
+- Dev server management: the sandbox dev server kept dying under browser load (Turbopack recompile + Chrome memory spike). Restarted with `setsid env -u DATABASE_URL NODE_OPTIONS="--max-old-space-size=2048" ./node_modules/.bin/next dev -p 3000` (the `env -u DATABASE_URL` is required because the sandbox shell has a stale `DATABASE_URL=file:...` that overrides the .env's Neon PostgreSQL URL; `setsid` fully detaches from the controlling terminal so the server survives shell exit). Pre-warmed the landing page compilation with a curl before opening Chrome — this prevented the OOM-during-first-compile crash.
+
+Agent Browser verification:
+- ✅ Desktop (1280×800): page renders with no errors. All sections present in the accessibility tree: hero h1 "Your Neighborhood. Search. Trust. Thrive.", 16 Pillars section (all 16 pillar headings: Community, Safety, Trust & Verification, Marketplace, Local Services, Jobs, Verified Businesses, Property & Rentals, Society Management, Civic Complaints, AI Assistant, Community Programs, Hyperlocal Reels, Yellow Pages, Neighborhood Search, Digital Identity), "Just shipped — explore what's new" heading, 16 feature headings, 3 how-it-works steps, 6 role headings (For Residents, For Businesses, For Service Providers, For Employers, For Creators, For Society Admins), safety spotlight, testimonials, pricing, FAQ, final CTA, footer.
+- ✅ Sticky header: after scrolling down 100px, the header buttons (Login, Get Started, 16 Pillars nav) remain visible.
+- ✅ Footer at bottom: after scrolling to the very bottom, the footer is rendered with the updated Platform column (Neighborhood Search, Yellow Pages, Hyperlocal Reels, Marketplace links), Why NeighborX column, Reach us column, Privacy/Terms/copyright row. Sticky-footer CSS (min-h-screen-dvh flex flex-col on root + mt-auto on footer) is intact from the original code.
+- ✅ Mobile (390×844): page renders with mobile menu toggle button, hero, 16 pillars, all sections. No layout breaks.
+- ✅ HTML content check (curl + grep): all 10 new key terms present ("Neighborhood Operating System", "16 Pillars", "Hyperlocal Reels", "Yellow Pages", "Neighborhood Search", "Digital Identity", "For Creators", "For Society Admins", "Society-first", "Newly launched"). All 3 stale terms removed ("Coming soon", "And much more on the roadmap", "India's hyperlocal super app"). No "Application error" / "TypeError" / "Unhandled" in rendered HTML.
+- ✅ No console errors (only standard React DevTools info + HMR connected logs).
+- ✅ No page errors.
+- ✅ Lint clean.
+
+Stage Summary:
+- ✅ Landing page fully rewritten to reflect the expanded "Neighborhood Operating System" vision — 16 pillars, 27+ modules, society-first positioning.
+- ✅ New 16 Pillars section replaces the stale "Coming Soon" roadmap teaser (which incorrectly framed already-shipped Phase 3 & 4 modules as upcoming).
+- ✅ Hero mockup now showcases the expanded vision: unified search bar + Yellow Pages card + Reels preview + SOS alert.
+- ✅ 2 new role sections (For Creators, For Society Admins) reflect the broader audience.
+- ✅ 4 new FAQs explain the differentiators (vs Nextdoor/WhatsApp, Reels vs Instagram, Businesses vs Yellow Pages, what Search covers).
+- ✅ Footer + metadata title/description aligned with the new positioning.
+- ✅ Browser-verified on desktop + mobile, sticky header + footer confirmed, no errors.
+- Files modified: src/components/nx/landing-page.tsx (full rewrite), src/components/nx/footer.tsx (Platform column + brand description), src/app/layout.tsx (metadata title/description/keywords/openGraph).

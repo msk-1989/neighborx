@@ -1,0 +1,1033 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { Logo } from "./logo";
+     5→import { Footer } from "./footer";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Badge } from "@/components/ui/badge";
+     8→import {
+     9→  Accordion,
+    10→  AccordionContent,
+    11→  AccordionItem,
+    12→  AccordionTrigger,
+    13→} from "@/components/ui/accordion";
+    14→import { cn } from "@/lib/utils";
+    15→import {
+    16→  ArrowRight,
+    17→  Sparkles,
+    18→  ShieldCheck,
+    19→  Zap,
+    20→  Heart,
+    21→  Users,
+    22→  Store,
+    23→  Wrench,
+    24→  Briefcase,
+    25→  Siren,
+    26→  ShoppingBag,
+    27→  MessagesSquare,
+    28→  Newspaper,
+    29→  CalendarDays,
+    30→  Trophy,
+    31→  Search,
+    32→  UserRound,
+    33→  MapPin,
+    34→  Star,
+    35→  Quote,
+    36→  Check,
+    37→  Menu,
+    38→  X,
+    39→  Phone,
+    40→  Mail,
+    41→  Lock,
+    42→  Globe2,
+    43→  TrendingUp,
+    44→  HandHeart,
+    45→  Building2,
+    46→  Car,
+    47→  GraduationCap,
+    48→  PackageOpen,
+    49→  Crown,
+    50→} from "lucide-react";
+    51→
+    52→interface LandingPageProps {
+    53→  onGetStarted: () => void;
+    54→  onLogin: () => void;
+    55→}
+    56→
+    57→const NAV_LINKS = [
+    58→  { href: "#features", label: "Features" },
+    59→  { href: "#how-it-works", label: "How it works" },
+    60→  { href: "#for-you", label: "For You" },
+    61→  { href: "#pricing", label: "Pricing" },
+    62→  { href: "#faq", label: "FAQ" },
+    63→];
+    64→
+    65→const TRUST_STATS = [
+    66→  { value: "12K+", label: "Verified neighbors" },
+    67→  { value: "850+", label: "Local businesses" },
+    68→  { value: "120+", label: "Societies onboarded" },
+    69→  { value: "15+", label: "Cities across India" },
+    70→];
+    71→
+    72→const FEATURES = [
+    73→  {
+    74→    icon: Newspaper,
+    75→    title: "Community Feed",
+    76→    desc: "Hyperlocal posts, updates, recommendations, polls, and events — scoped to your society, area, or city.",
+    77→    color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30",
+    78→  },
+    79→  {
+    80→    icon: MessagesSquare,
+    81→    title: "Real-time Chat",
+    82→    desc: "Society-wide and area-wide chat rooms with presence indicators. Connect with neighbors instantly.",
+    83→    color: "text-sky-600 bg-sky-50 dark:bg-sky-950/30",
+    84→  },
+    85→  {
+    86→    icon: ShoppingBag,
+    87→    title: "Marketplace",
+    88→    desc: "Buy and sell within your trusted neighborhood. Electronics, furniture, vehicles — all local, all verified.",
+    89→    color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30",
+    90→  },
+    91→  {
+    92→    icon: Wrench,
+    93→    title: "Services",
+    94→    desc: "Book plumbers, electricians, tutors, cooks, and more — reviewed by neighbors you trust.",
+    95→    color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30",
+    96→  },
+    97→  {
+    98→    icon: Briefcase,
+    99→    title: "Local Jobs",
+   100→    desc: "Find jobs near you or hire locally. Full-time, part-time, gig — all within your community.",
+   101→    color: "text-rose-600 bg-rose-50 dark:bg-rose-950/30",
+   102→  },
+   103→  {
+   104→    icon: Siren,
+   105→    title: "Emergency SOS",
+   106→    desc: "One-tap SOS broadcasts your location to nearby neighbors and alerts — real help, real fast.",
+   107→    color: "text-red-600 bg-red-50 dark:bg-red-950/30",
+   108→  },
+   109→  {
+   110→    icon: ShieldCheck,
+   111→    title: "Neighborhood Watch",
+   112→    desc: "Crowdsourced safety alerts for scams, thefts, and suspicious activity. Stay informed, stay safe.",
+   113→    color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30",
+   114→  },
+   115→  {
+   116→    icon: Store,
+   117→    title: "Verified Businesses",
+   118→    desc: "Discover and review local businesses — from kirana stores to clinics — with trust badges.",
+   119→    color: "text-teal-600 bg-teal-50 dark:bg-teal-950/30",
+   120→  },
+   121→  {
+   122→    icon: Trophy,
+   123→    title: "Reputation & Rewards",
+   124→    desc: "Earn reward points, climb trust tiers (Bronze → Legend), and unlock Community Hero status.",
+   125→    color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30",
+   126→  },
+   127→  {
+   128→    icon: CalendarDays,
+   129→    title: "Events & Gatherings",
+   130→    desc: "Discover and RSVP to community events — festivals, cleanups, sports, meetups, and more.",
+   131→    color: "text-pink-600 bg-pink-50 dark:bg-pink-950/30",
+   132→  },
+   133→  {
+   134→    icon: Search,
+   135→    title: "Lost & Found",
+   136→    desc: "Lost a pet, wallet, or document? Post it hyperlocally and let neighbors help you find it.",
+   137→    color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30",
+   138→  },
+   139→  {
+   140→    icon: UserRound,
+   141→    title: "5-Level Verification",
+   142→    desc: "Mobile, email, Aadhaar, address, and business verification — build trust, unlock features.",
+   143→    color: "text-green-600 bg-green-50 dark:bg-green-950/30",
+   144→  },
+   145→];
+   146→
+   147→const ROADMAP_FEATURES = [
+   148→  { icon: Building2, label: "Property & Rentals", phase: "Phase 3" },
+   149→  { icon: Users, label: "Society Management", phase: "Phase 3" },
+   150→  { icon: HandHeart, label: "Fundraising", phase: "Phase 4" },
+   151→  { icon: Car, label: "Carpool & Mobility", phase: "Phase 4" },
+   152→  { icon: GraduationCap, label: "Skill Exchange", phase: "Phase 4" },
+   153→  { icon: PackageOpen, label: "Hyperlocal Commerce", phase: "Phase 4" },
+   154→];
+   155→
+   156→const HOW_IT_WORKS = [
+   157→  {
+   158→    step: "01",
+   159→    title: "Register with OTP",
+   160→    desc: "Sign up in 30 seconds with your email and phone. No passwords — just a secure 6-digit OTP.",
+   161→    icon: Lock,
+   162→  },
+   163→  {
+   164→    step: "02",
+   165→    title: "Verify your identity",
+   166→    desc: "Complete 5-level verification (mobile, email, Aadhaar, address, business) to unlock trust features.",
+   167→    icon: ShieldCheck,
+   168→  },
+   169→  {
+   170→    step: "03",
+   171→    title: "Connect & thrive",
+   172→    desc: "Join your neighborhood feed, chat, marketplace, and more. Build trust, earn rewards, help neighbors.",
+   173→    icon: Heart,
+   174→  },
+   175→];
+   176→
+   177→const ROLE_SECTIONS = [
+   178→  {
+   179→    icon: Users,
+   180→    title: "For Residents",
+   181→    tagline: "Live better, together",
+   182→    color: "from-emerald-500 to-teal-600",
+   183→    points: [
+   184→      "Connect with verified neighbors in your society and area",
+   185→      "Get real-time safety alerts and emergency SOS",
+   186→      "Buy, sell, and borrow within a trusted community",
+   187→      "Find local services, jobs, and events near you",
+   188→      "Earn rewards and climb the Community Hero leaderboard",
+   189→    ],
+   190→  },
+   191→  {
+   192→    icon: Store,
+   193→    title: "For Businesses",
+   194→    tagline: "Grow locally, trusted",
+   195→    color: "from-amber-500 to-orange-600",
+   196→    points: [
+   197→      "List your business with verified badges for trust",
+   198→      "Reach hyperlocal customers in your area",
+   199→      "Collect reviews and build your reputation",
+   200→      "Boost listings and run targeted promotions",
+   201→      "Track engagement with Business Pro analytics",
+   202→    ],
+   203→  },
+   204→  {
+   205→    icon: Wrench,
+   206→    title: "For Service Providers",
+   207→    tagline: "Get booked, get paid",
+   208→    color: "from-purple-500 to-fuchsia-600",
+   209→    points: [
+   210→      "Offer plumbing, tutoring, cleaning, and more",
+   211→      "Get verified and stand out with trust badges",
+   212→      "Receive bookings and manage availability",
+   213→      "Build a 5-star reputation with neighbor reviews",
+   214→      "Grow your client base hyperlocally",
+   215→    ],
+   216→  },
+   217→  {
+   218→    icon: Briefcase,
+   219→    title: "For Employers",
+   220→    tagline: "Hire locally, faster",
+   221→    color: "from-rose-500 to-pink-600",
+   222→    points: [
+   223→      "Post jobs and reach local talent instantly",
+   224→      "Filter by verification level for trusted hires",
+   225→      "Manage applications and shortlist candidates",
+   226→      "Hire for full-time, part-time, or gig roles",
+   227→      "Build your employer brand in the community",
+   228→    ],
+   229→  },
+   230→];
+   231→
+   232→const TESTIMONIALS = [
+   233→  {
+   234→    name: "Priya Kulkarni",
+   235→    role: "Society Admin · Royal Residency, Udgir",
+   236→    avatar: "PK",
+   237→    color: "bg-emerald-500",
+   238→    quote:
+   239→      "NeighborX transformed how our society communicates. Visitor management, notices, chat — everything in one place. We finally feel connected.",
+   240→    rating: 5,
+   241→  },
+   242→  {
+   243→    name: "Ravi Shinde",
+   244→    role: "Business Owner · Shinde Kirana",
+   245→    avatar: "RS",
+   246→    color: "bg-amber-500",
+   247→    quote:
+   248→      "I get 3-4 new customers every week from my NeighborX listing. The verified badge built trust instantly. Best decision for my shop.",
+   249→    rating: 5,
+   250→  },
+   251→  {
+   252→    name: "Anita Desai",
+   253→    role: "Tutor · Latur",
+   254→    avatar: "AD",
+   255→    color: "bg-purple-500",
+   256→    quote:
+   257→      "As a service provider, I went from 5 students to 22 in 3 months. The booking system and reviews made it so easy to grow.",
+   258→    rating: 5,
+   259→  },
+   260→  {
+   261→    name: "Vijay More",
+   262→    role: "Resident · Khair Nagar",
+   263→    avatar: "VM",
+   264→    color: "bg-sky-500",
+   265→    quote:
+   266→      "I lost my wallet near the temple. Posted on NeighborX Lost & Found — found it within 2 hours thanks to a neighbor. This is what community means.",
+   267→    rating: 5,
+   268→  },
+   269→  {
+   270→    name: "Mahesh Jadhav",
+   271→    role: "Employer · Industrial Estate",
+   272→    avatar: "MJ",
+   273→    color: "bg-rose-500",
+   274→    quote:
+   275→      "Hired 4 local workers through NeighborX in a week. The verification badges gave me confidence. No more unreliable referrals.",
+   276→    rating: 5,
+   277→  },
+   278→  {
+   279→    name: "Sneha Patil",
+   280→    role: "Service Provider · Udgir",
+   281→    avatar: "SP",
+   282→    color: "bg-teal-500",
+   283→    quote:
+   284→      "The reputation system is motivating. I climbed from Bronze to Gold in 6 months just by doing good work and helping neighbors.",
+   285→    rating: 5,
+   286→  },
+   287→];
+   288→
+   289→const PRICING = [
+   290→  {
+   291→    name: "Free",
+   292→    price: "₹0",
+   293→    period: "forever",
+   294→    desc: "For every neighbor",
+   295→    icon: Heart,
+   296→    color: "border-border",
+   297→    cta: "Get started",
+   298→    highlight: false,
+   299→    features: [
+   300→      "Community feed, chat & groups",
+   301→      "Marketplace (buy & sell)",
+   302→      "Emergency SOS & safety alerts",
+   303→      "5-level verification",
+   304→      "Reputation & rewards",
+   305→      "Up to 3 listings per month",
+   306→    ],
+   307→  },
+   308→  {
+   309→    name: "Business Pro",
+   310→    price: "₹499",
+   311→    period: "/month",
+   312→    desc: "For local businesses",
+   313→    icon: Store,
+   314→    color: "border-primary ring-2 ring-primary/20",
+   315→    cta: "Start free trial",
+   316→    highlight: true,
+   317→    features: [
+   318→      "Everything in Free",
+   319→      "Verified business badge",
+   320→      "Unlimited listings + boost",
+   321→      "Analytics dashboard",
+   322→      "Promoted in neighborhood feed",
+   323→      "Priority customer support",
+   324→    ],
+   325→  },
+   326→  {
+   327→    name: "Service Pro",
+   328→    price: "₹299",
+   329→    period: "/month",
+   330→    desc: "For service providers",
+   331→    icon: Wrench,
+   332→    color: "border-border",
+   333→    cta: "Start free trial",
+   334→    highlight: false,
+   335→    features: [
+   336→      "Everything in Free",
+   337→      "Verified provider badge",
+   338→      "Online booking calendar",
+   339→      "Customer review management",
+   340→      "Featured in service search",
+   341→      "Income tracking dashboard",
+   342→    ],
+   343→  },
+   344→];
+   345→
+   346→const FAQS = [
+   347→  {
+   348→    q: "Is NeighborX free to use?",
+   349→    a: "Yes! The core app — community feed, chat, marketplace, emergency SOS, verification, and reputation — is completely free for every neighbor. We offer optional Pro plans for businesses and service providers who want advanced features.",
+   350→  },
+   351→  {
+   352→    q: "How does verification work?",
+   353→    a: "We use a 5-level verification system: (1) Mobile via OTP, (2) Email via link, (3) Aadhaar via OTP, (4) Address via document upload, (5) Business via GST/license. Each level unlocks new features and builds your trust score.",
+   354→  },
+   355→  {
+   356→    q: "Is my data safe?",
+   357→    a: "Absolutely. Your personal data is encrypted, never sold, and only visible to verified neighbors in your community. You control what's visible on your profile. We're compliant with India's DPDP Act.",
+   358→  },
+   359→  {
+   360→    q: "Which cities is NeighborX available in?",
+   361→    a: "We're currently live in 15+ cities across Maharashtra, Karnataka, and Telangana — including Udgir, Latur, Solapur, Kalaburagi, and Hyderabad. New cities are added every month. Request your city if it's not listed!",
+   362→  },
+   363→  {
+   364→    q: "How is NeighborX different from WhatsApp groups?",
+   365→    a: "WhatsApp groups are chaotic, unverified, and lack structure. NeighborX offers verified identities, scoped feeds (society/area/city), built-in marketplace, services, jobs, emergency SOS, reputation system, and 10-level admin moderation — all in one trusted app.",
+   366→  },
+   367→  {
+   368→    q: "Can I use NeighborX for my society?",
+   369→    a: "Yes! We have a dedicated Society Admin role with tools for visitor management, notices, maintenance tracking, facility booking, and polls. Contact us to onboard your society and get a Society Pro plan.",
+   370→  },
+   371→  {
+   372→    q: "What is the Community Hero program?",
+   373→    a: "Community Heroes are neighbors who actively contribute — helping others, posting alerts, volunteering. You earn reward points, climb tiers (Bronze → Silver → Gold → Platinum → Legend), and get recognized with badges and perks.",
+   374→  },
+   375→  {
+   376→    q: "How do Emergency SOS alerts work?",
+   377→    a: "When you trigger SOS, your live location is instantly broadcast to verified neighbors within 2km who have opted in as emergency volunteers. They receive a notification and can respond immediately. Your trusted contacts are also alerted.",
+   378→  },
+   379→];
+   380→
+   381→export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
+   382→  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+   383→  const [scrolled, setScrolled] = React.useState(false);
+   384→
+   385→  React.useEffect(() => {
+   386→    const onScroll = () => setScrolled(window.scrollY > 8);
+   387→    window.addEventListener("scroll", onScroll, { passive: true });
+   388→    return () => window.removeEventListener("scroll", onScroll);
+   389→  }, []);
+   390→
+   391→  const scrollTo = (href: string) => {
+   392→    setMobileMenuOpen(false);
+   393→    const el = document.querySelector(href);
+   394→    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+   395→  };
+   396→
+   397→  return (
+   398→    <div className="min-h-screen-dvh flex flex-col bg-background">
+   399→      {/* ── Header ── */}
+   400→      <header
+   401→        className={cn(
+   402→          "sticky top-0 z-50 transition-all",
+   403→          scrolled
+   404→            ? "border-b bg-background/85 backdrop-blur-md shadow-sm"
+   405→            : "bg-transparent",
+   406→        )}
+   407→      >
+   408→        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+   409→          <Logo />
+   410→
+   411→          {/* Desktop nav */}
+   412→          <nav className="hidden items-center gap-1 lg:flex">
+   413→            {NAV_LINKS.map((link) => (
+   414→              <button
+   415→                key={link.href}
+   416→                onClick={() => scrollTo(link.href)}
+   417→                className="tap-feedback rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+   418→              >
+   419→                {link.label}
+   420→              </button>
+   421→            ))}
+   422→          </nav>
+   423→
+   424→          {/* Desktop CTAs */}
+   425→          <div className="hidden items-center gap-2 lg:flex">
+   426→            <Button variant="ghost" size="sm" onClick={onLogin}>
+   427→              Login
+   428→            </Button>
+   429→            <Button size="sm" onClick={onGetStarted} className="gap-1.5">
+   430→              Get Started
+   431→              <ArrowRight className="h-4 w-4" />
+   432→            </Button>
+   433→          </div>
+   434→
+   435→          {/* Mobile menu button */}
+   436→          <button
+   437→            className="tap-feedback grid h-10 w-10 place-items-center rounded-lg border lg:hidden"
+   438→            onClick={() => setMobileMenuOpen((v) => !v)}
+   439→            aria-label="Toggle menu"
+   440→          >
+   441→            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+   442→          </button>
+   443→        </div>
+   444→
+   445→        {/* Mobile menu */}
+   446→        {mobileMenuOpen && (
+   447→          <div className="border-t bg-background lg:hidden">
+   448→            <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3">
+   449→              {NAV_LINKS.map((link) => (
+   450→                <button
+   451→                  key={link.href}
+   452→                  onClick={() => scrollTo(link.href)}
+   453→                  className="tap-feedback rounded-md px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+   454→                >
+   455→                  {link.label}
+   456→                </button>
+   457→              ))}
+   458→              <div className="mt-2 flex gap-2 border-t pt-3">
+   459→                <Button variant="outline" className="flex-1" onClick={onLogin}>
+   460→                  Login
+   461→                </Button>
+   462→                <Button className="flex-1" onClick={onGetStarted}>
+   463→                  Get Started
+   464→                </Button>
+   465→              </div>
+   466→            </nav>
+   467→          </div>
+   468→        )}
+   469→      </header>
+   470→
+   471→      {/* ── Hero ── */}
+   472→      <section className="relative overflow-hidden">
+   473→        {/* Background gradient blobs */}
+   474→        <div className="pointer-events-none absolute inset-0 -z-10">
+   475→          <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-900/20" />
+   476→          <div className="absolute -right-40 top-20 h-96 w-96 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-900/20" />
+   477→        </div>
+   478→
+   479→        <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pb-24 lg:pt-20">
+   480→          <div className="grid items-center gap-12 lg:grid-cols-2">
+   481→            {/* Left: copy */}
+   482→            <div className="text-center lg:text-left">
+   483→              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+   484→                <Sparkles className="h-3.5 w-3.5" />
+   485→                India&apos;s hyperlocal super app
+   486→              </div>
+   487→              <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+   488→                Your Neighborhood.
+   489→                <br />
+   490→                <span className="text-gradient">Built on Trust.</span>
+   491→              </h1>
+   492→              <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground sm:text-lg lg:mx-0">
+   493→                Connect with verified neighbors, discover local businesses, find jobs and services,
+   494→                get help in emergencies, and build a stronger community — all in one trusted app.
+   495→              </p>
+   496→              <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+   497→                <Button size="lg" onClick={onGetStarted} className="w-full gap-2 sm:w-auto">
+   498→                  Get Started — it&apos;s free
+   499→                  <ArrowRight className="h-4 w-4" />
+   500→                </Button>
+   501→                <Button size="lg" variant="outline" onClick={onLogin} className="w-full sm:w-auto">
+   502→                  I already have an account
+   503→                </Button>
+   504→              </div>
+   505→              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground lg:justify-start">
+   506→                <span className="flex items-center gap-1.5">
+   507→                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+   508→                  No passwords — OTP only
+   509→                </span>
+   510→                <span className="flex items-center gap-1.5">
+   511→                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+   512→                  5-level verification
+   513→                </span>
+   514→                <span className="flex items-center gap-1.5">
+   515→                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+   516→                  Free forever
+   517→                </span>
+   518→              </div>
+   519→            </div>
+   520→
+   521→            {/* Right: app preview mockup */}
+   522→            <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+   523→              <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl">
+   524→                {/* Mock header */}
+   525→                <div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
+   526→                  <div className="flex items-center gap-2">
+   527→                    <div className="grid h-7 w-7 place-items-center rounded-lg brand-gradient text-white">
+   528→                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+   529→                        <path d="M3 11l9-7 9 7" />
+   530→                        <path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9" />
+   531→                      </svg>
+   532→                    </div>
+   533→                    <div className="text-sm font-bold">
+   534→                      Neighbor<span className="text-gradient">X</span>
+   535→                    </div>
+   536→                  </div>
+   537→                  <div className="flex items-center gap-1.5">
+   538→                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+   539→                    <span className="text-[10px] font-medium text-muted-foreground">Royal Residency</span>
+   540→                  </div>
+   541→                </div>
+   542→                {/* Mock feed */}
+   543→                <div className="space-y-3 p-4">
+   544→                  {/* SOS alert */}
+   545→                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/30">
+   546→                    <div className="flex items-center gap-2">
+   547→                      <Siren className="h-4 w-4 text-red-600" />
+   548→                      <span className="text-xs font-bold text-red-700 dark:text-red-400">LIVE SOS · 2h ago</span>
+   549→                    </div>
+   550→                    <p className="mt-1 text-xs text-foreground">
+   551→                      Two-wheeler accident on Latur Road — help needed near HP Pump.
+   552→                    </p>
+   553→                  </div>
+   554→                  {/* Post */}
+   555→                  <div className="rounded-lg border p-3">
+   556→                    <div className="flex items-center gap-2">
+   557→                      <div className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">AD</div>
+   558→                      <div>
+   559→                        <div className="text-xs font-semibold">Arjun Deshmukh</div>
+   560→                        <div className="text-[10px] text-muted-foreground">Royal Residency · 2h ago</div>
+   561→                      </div>
+   562→                    </div>
+   563→                    <p className="mt-2 text-xs">
+   564→                      🏆 Congratulations to our society cricket team for winning the inter-society tournament! Great teamwork boys.
+   565→                    </p>
+   566→                    <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
+   567→                      <span>❤️ 89</span>
+   568→                      <span>💬 12</span>
+   569→                    </div>
+   570→                  </div>
+   571→                  {/* Marketplace */}
+   572→                  <div className="rounded-lg border p-3">
+   573→                    <div className="flex items-center gap-2">
+   574→                      <div className="grid h-7 w-7 place-items-center rounded-full bg-amber-500 text-[10px] font-bold text-white">RS</div>
+   575→                      <div>
+   576→                        <div className="text-xs font-semibold">Ravi Shinde · Marketplace</div>
+   577→                        <div className="text-[10px] text-muted-foreground">Royal Residency · 5h ago</div>
+   578→                      </div>
+   579→                    </div>
+   580→                    <div className="mt-2 flex gap-2">
+   581→                      <div className="h-16 w-16 rounded-md bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800" />
+   582→                      <div className="flex-1">
+   583→                        <div className="text-xs font-semibold">Steel Almirah — excellent condition</div>
+   584→                        <div className="text-sm font-bold text-emerald-600">₹3,500</div>
+   585→                        <Badge variant="secondary" className="mt-0.5 text-[9px]">Verified seller</Badge>
+   586→                      </div>
+   587→                    </div>
+   588→                  </div>
+   589→                </div>
+   590→              </div>
+   591→              {/* Floating badge */}
+   592→              <div className="absolute -right-3 -top-3 hidden rounded-xl border bg-card p-3 shadow-lg sm:block">
+   593→                <div className="flex items-center gap-2">
+   594→                  <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+   595→                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+   596→                  </div>
+   597→                  <div>
+   598→                    <div className="text-xs font-bold">100% Verified</div>
+   599→                    <div className="text-[10px] text-muted-foreground">No fake accounts</div>
+   600→                  </div>
+   601→                </div>
+   602→              </div>
+   603→            </div>
+   604→          </div>
+   605→
+   606→          {/* Trust stats */}
+   607→          <div className="mt-16 grid grid-cols-2 gap-4 border-t pt-8 sm:grid-cols-4 lg:mt-20">
+   608→            {TRUST_STATS.map((s) => (
+   609→              <div key={s.label} className="text-center">
+   610→                <div className="text-3xl font-extrabold text-gradient sm:text-4xl">{s.value}</div>
+   611→                <div className="mt-1 text-xs text-muted-foreground sm:text-sm">{s.label}</div>
+   612→              </div>
+   613→            ))}
+   614→          </div>
+   615→        </div>
+   616→      </section>
+   617→
+   618→      {/* ── Features ── */}
+   619→      <section id="features" className="border-t bg-muted/30 py-16 sm:py-20">
+   620→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   621→          <div className="mx-auto max-w-2xl text-center">
+   622→            <Badge variant="secondary" className="mb-3">One app, everything local</Badge>
+   623→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   624→              The super app for every Indian neighborhood
+   625→            </h2>
+   626→            <p className="mt-3 text-muted-foreground">
+   627→              From community bonding to local commerce, safety to services — NeighborX brings 12+ essential
+   628→              modules into one trusted, verified platform.
+   629→            </p>
+   630→          </div>
+   631→
+   632→          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   633→            {FEATURES.map((f) => (
+   634→              <div
+   635→                key={f.title}
+   636→                className="group rounded-xl border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md"
+   637→              >
+   638→                <div className={cn("grid h-11 w-11 place-items-center rounded-lg", f.color)}>
+   639→                  <f.icon className="h-5 w-5" />
+   640→                </div>
+   641→                <h3 className="mt-4 font-bold">{f.title}</h3>
+   642→                <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
+   643→              </div>
+   644→            ))}
+   645→          </div>
+   646→
+   647→          {/* Roadmap teaser */}
+   648→          <div className="mt-12 rounded-2xl border bg-card p-6 sm:p-8">
+   649→            <div className="flex flex-col items-center gap-2 text-center">
+   650→              <Badge variant="outline" className="gap-1">
+   651→                <Sparkles className="h-3 w-3" />
+   652→                Coming soon
+   653→              </Badge>
+   654→              <h3 className="text-xl font-bold sm:text-2xl">And much more on the roadmap</h3>
+   655→              <p className="max-w-xl text-sm text-muted-foreground">
+   656→                We&apos;re building the future of hyperlocal living. Here&apos;s what&apos;s coming in Phase 3 &amp; 4:
+   657→              </p>
+   658→            </div>
+   659→            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+   660→              {ROADMAP_FEATURES.map((r) => (
+   661→                <div key={r.label} className="rounded-lg border bg-background p-3 text-center">
+   662→                  <r.icon className="mx-auto h-6 w-6 text-primary" />
+   663→                  <div className="mt-2 text-xs font-semibold">{r.label}</div>
+   664→                  <div className="text-[10px] text-muted-foreground">{r.phase}</div>
+   665→                </div>
+   666→              ))}
+   667→            </div>
+   668→          </div>
+   669→        </div>
+   670→      </section>
+   671→
+   672→      {/* ── How it works ── */}
+   673→      <section id="how-it-works" className="py-16 sm:py-20">
+   674→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   675→          <div className="mx-auto max-w-2xl text-center">
+   676→            <Badge variant="secondary" className="mb-3">Get started in minutes</Badge>
+   677→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   678→              How NeighborX works
+   679→            </h2>
+   680→            <p className="mt-3 text-muted-foreground">
+   681→              Three simple steps to join your trusted neighborhood community.
+   682→            </p>
+   683→          </div>
+   684→
+   685→          <div className="mt-12 grid gap-6 md:grid-cols-3">
+   686→            {HOW_IT_WORKS.map((s, i) => (
+   687→              <div key={s.step} className="relative">
+   688→                {/* Connector line */}
+   689→                {i < HOW_IT_WORKS.length - 1 && (
+   690→                  <div className="absolute left-1/2 top-12 hidden h-px w-full bg-border md:block" />
+   691→                )}
+   692→                <div className="relative rounded-xl border bg-card p-6 text-center">
+   693→                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full brand-gradient text-white shadow-sm">
+   694→                    <s.icon className="h-6 w-6" />
+   695→                  </div>
+   696→                  <div className="mt-3 text-xs font-bold text-primary">STEP {s.step}</div>
+   697→                  <h3 className="mt-1 text-lg font-bold">{s.title}</h3>
+   698→                  <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
+   699→                </div>
+   700→              </div>
+   701→            ))}
+   702→          </div>
+   703→        </div>
+   704→      </section>
+   705→
+   706→      {/* ── For You (role-based) ── */}
+   707→      <section id="for-you" className="border-t bg-muted/30 py-16 sm:py-20">
+   708→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   709→          <div className="mx-auto max-w-2xl text-center">
+   710→            <Badge variant="secondary" className="mb-3">Built for everyone</Badge>
+   711→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   712→              There&apos;s a place for you in NeighborX
+   713→            </h2>
+   714→            <p className="mt-3 text-muted-foreground">
+   715→              Whether you live here, sell here, serve here, or hire here — NeighborX adapts to you.
+   716→            </p>
+   717→          </div>
+   718→
+   719→          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+   720→            {ROLE_SECTIONS.map((r) => (
+   721→              <div key={r.title} className="overflow-hidden rounded-2xl border bg-card">
+   722→                <div className={cn("bg-gradient-to-r p-5 text-white", r.color)}>
+   723→                  <div className="flex items-center gap-3">
+   724→                    <div className="grid h-11 w-11 place-items-center rounded-lg bg-white/20 backdrop-blur">
+   725→                      <r.icon className="h-6 w-6" />
+   726→                    </div>
+   727→                    <div>
+   728→                      <h3 className="text-lg font-bold">{r.title}</h3>
+   729→                      <div className="text-sm text-white/80">{r.tagline}</div>
+   730→                    </div>
+   731→                  </div>
+   732→                </div>
+   733→                <ul className="space-y-2.5 p-5">
+   734→                  {r.points.map((p) => (
+   735→                    <li key={p} className="flex items-start gap-2 text-sm">
+   736→                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+   737→                      <span>{p}</span>
+   738→                    </li>
+   739→                  ))}
+   740→                </ul>
+   741→              </div>
+   742→            ))}
+   743→          </div>
+   744→        </div>
+   745→      </section>
+   746→
+   747→      {/* ── Safety spotlight ── */}
+   748→      <section className="py-16 sm:py-20">
+   749→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   750→          <div className="overflow-hidden rounded-3xl border bg-gradient-to-br from-red-50 via-background to-emerald-50 dark:from-red-950/20 dark:via-background dark:to-emerald-950/20">
+   751→            <div className="grid gap-8 p-8 sm:p-12 lg:grid-cols-2 lg:items-center">
+   752→              <div>
+   753→                <Badge variant="secondary" className="mb-3 gap-1">
+   754→                  <ShieldCheck className="h-3 w-3" />
+   755→                  Safety first
+   756→                </Badge>
+   757→                <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   758→                  When seconds matter, your neighborhood has your back
+   759→                </h2>
+   760→                <p className="mt-4 text-muted-foreground">
+   761→                  NeighborX isn&apos;t just social — it&apos;s a lifeline. One tap on SOS broadcasts your live
+   762→                  location to verified neighbors nearby who&apos;ve opted in as emergency volunteers.
+   763→                </p>
+   764→                <div className="mt-6 space-y-3">
+   765→                  {[
+   766→                    { icon: Siren, title: "Emergency SOS", desc: "One-tap broadcast to nearby neighbors + trusted contacts" },
+   767→                    { icon: ShieldCheck, title: "Neighborhood Watch", desc: "Real-time alerts for scams, thefts, and suspicious activity" },
+   768→                    { icon: Users, title: "Volunteer Network", desc: "Verified emergency responders in your area, ready to help" },
+   769→                  ].map((item) => (
+   770→                    <div key={item.title} className="flex items-start gap-3">
+   771→                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-100 dark:bg-red-900/30">
+   772→                        <item.icon className="h-4 w-4 text-red-600" />
+   773→                      </div>
+   774→                      <div>
+   775→                        <div className="text-sm font-semibold">{item.title}</div>
+   776→                        <div className="text-xs text-muted-foreground">{item.desc}</div>
+   777→                      </div>
+   778→                    </div>
+   779→                  ))}
+   780→                </div>
+   781→              </div>
+   782→              <div className="relative">
+   783→                <div className="rounded-2xl border bg-card p-5 shadow-lg">
+   784→                  <div className="flex items-center gap-2 border-b pb-3">
+   785→                    <Siren className="h-5 w-5 text-red-600" />
+   786→                    <span className="font-bold text-red-600">SOS Alert Active</span>
+   787→                    <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-red-500" />
+   788→                  </div>
+   789→                  <div className="mt-3 space-y-3">
+   790→                    <div>
+   791→                      <div className="text-xs text-muted-foreground">Location</div>
+   792→                      <div className="flex items-center gap-1.5 text-sm font-semibold">
+   793→                        <MapPin className="h-3.5 w-3.5 text-red-600" />
+   794→                        Latur Road, near HP Pump
+   795→                      </div>
+   796→                    </div>
+   797→                    <div>
+   798→                      <div className="text-xs text-muted-foreground">Broadcast to</div>
+   799→                      <div className="text-sm font-semibold">14 verified neighbors within 2km</div>
+   800→                    </div>
+   801→                    <div>
+   802→                      <div className="text-xs text-muted-foreground">Responders en route</div>
+   803→                      <div className="mt-1 flex -space-x-2">
+   804→                        {["AD", "PK", "VM", "RS"].map((initials, i) => (
+   805→                          <div
+   806→                            key={initials}
+   807→                            className={cn(
+   808→                              "grid h-7 w-7 place-items-center rounded-full border-2 border-card text-[10px] font-bold text-white",
+   809→                              ["bg-emerald-500", "bg-amber-500", "bg-sky-500", "bg-purple-500"][i],
+   810→                            )}
+   811→                          >
+   812→                            {initials}
+   813→                          </div>
+   814→                        ))}
+   815→                        <div className="grid h-7 w-7 place-items-center rounded-full border-2 border-card bg-muted text-[10px] font-bold">
+   816→                          +10
+   817→                        </div>
+   818→                      </div>
+   819→                    </div>
+   820→                  </div>
+   821→                </div>
+   822→              </div>
+   823→            </div>
+   824→          </div>
+   825→        </div>
+   826→      </section>
+   827→
+   828→      {/* ── Testimonials ── */}
+   829→      <section className="border-t bg-muted/30 py-16 sm:py-20">
+   830→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   831→          <div className="mx-auto max-w-2xl text-center">
+   832→            <Badge variant="secondary" className="mb-3">Loved by neighbors</Badge>
+   833→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   834→              What our community says
+   835→            </h2>
+   836→            <p className="mt-3 text-muted-foreground">
+   837→              Real stories from real neighbors across India.
+   838→            </p>
+   839→          </div>
+   840→
+   841→          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+   842→            {TESTIMONIALS.map((t) => (
+   843→              <div key={t.name} className="rounded-xl border bg-card p-5">
+   844→                <Quote className="h-7 w-7 text-primary/30" />
+   845→                <div className="mt-2 flex gap-0.5">
+   846→                  {Array.from({ length: t.rating }).map((_, i) => (
+   847→                    <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+   848→                  ))}
+   849→                </div>
+   850→                <p className="mt-3 text-sm leading-relaxed text-foreground">&ldquo;{t.quote}&rdquo;</p>
+   851→                <div className="mt-4 flex items-center gap-3 border-t pt-4">
+   852→                  <div className={cn("grid h-10 w-10 place-items-center rounded-full text-sm font-bold text-white", t.color)}>
+   853→                    {t.avatar}
+   854→                  </div>
+   855→                  <div>
+   856→                    <div className="text-sm font-semibold">{t.name}</div>
+   857→                    <div className="text-xs text-muted-foreground">{t.role}</div>
+   858→                  </div>
+   859→                </div>
+   860→              </div>
+   861→            ))}
+   862→          </div>
+   863→        </div>
+   864→      </section>
+   865→
+   866→      {/* ── Pricing ── */}
+   867→      <section id="pricing" className="py-16 sm:py-20">
+   868→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   869→          <div className="mx-auto max-w-2xl text-center">
+   870→            <Badge variant="secondary" className="mb-3">Simple, transparent pricing</Badge>
+   871→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   872→              Free for neighbors, Pro for pros
+   873→            </h2>
+   874→            <p className="mt-3 text-muted-foreground">
+   875→              Every neighbor gets the full community experience for free. Businesses and service providers
+   876→              can upgrade for advanced features.
+   877→            </p>
+   878→          </div>
+   879→
+   880→          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+   881→            {PRICING.map((p) => (
+   882→              <div
+   883→                key={p.name}
+   884→                className={cn(
+   885→                  "relative rounded-2xl border bg-card p-6",
+   886→                  p.color,
+   887→                  p.highlight && "lg:-mt-4 lg:mb-4",
+   888→                )}
+   889→              >
+   890→                {p.highlight && (
+   891→                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1">
+   892→                    <Sparkles className="h-3 w-3" />
+   893→                    Most popular
+   894→                  </Badge>
+   895→                )}
+   896→                <div className="flex items-center gap-2">
+   897→                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+   898→                    <p.icon className="h-5 w-5" />
+   899→                  </div>
+   900→                  <div>
+   901→                    <div className="font-bold">{p.name}</div>
+   902→                    <div className="text-xs text-muted-foreground">{p.desc}</div>
+   903→                  </div>
+   904→                </div>
+   905→                <div className="mt-5 flex items-baseline gap-1">
+   906→                  <span className="text-4xl font-extrabold">{p.price}</span>
+   907→                  <span className="text-sm text-muted-foreground">{p.period}</span>
+   908→                </div>
+   909→                <Button
+   910→                  className="mt-5 w-full"
+   911→                  variant={p.highlight ? "default" : "outline"}
+   912→                  onClick={onGetStarted}
+   913→                >
+   914→                  {p.cta}
+   915→                </Button>
+   916→                <ul className="mt-6 space-y-2.5">
+   917→                  {p.features.map((f) => (
+   918→                    <li key={f} className="flex items-start gap-2 text-sm">
+   919→                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+   920→                      <span>{f}</span>
+   921→                    </li>
+   922→                  ))}
+   923→                </ul>
+   924→              </div>
+   925→            ))}
+   926→          </div>
+   927→
+   928→          <div className="mt-8 text-center text-sm text-muted-foreground">
+   929→            <span className="flex items-center justify-center gap-1.5">
+   930→              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+   931→              All plans include OTP-based secure login, 5-level verification, and data encryption.
+   932→            </span>
+   933→          </div>
+   934→        </div>
+   935→      </section>
+   936→
+   937→      {/* ── FAQ ── */}
+   938→      <section id="faq" className="border-t bg-muted/30 py-16 sm:py-20">
+   939→        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+   940→          <div className="text-center">
+   941→            <Badge variant="secondary" className="mb-3">Got questions?</Badge>
+   942→            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+   943→              Frequently asked questions
+   944→            </h2>
+   945→            <p className="mt-3 text-muted-foreground">
+   946→              Everything you need to know about NeighborX. Can&apos;t find an answer?{" "}
+   947→              <a href="mailto:hello@neighborx.in" className="font-semibold text-primary hover:underline">
+   948→                Email us
+   949→              </a>
+   950→              .
+   951→            </p>
+   952→          </div>
+   953→
+   954→          <div className="mt-10">
+   955→            <Accordion type="single" collapsible className="w-full">
+   956→              {FAQS.map((faq, i) => (
+   957→                <AccordionItem key={i} value={`item-${i}`}>
+   958→                  <AccordionTrigger className="text-left text-base font-semibold">
+   959→                    {faq.q}
+   960→                  </AccordionTrigger>
+   961→                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+   962→                    {faq.a}
+   963→                  </AccordionContent>
+   964→                </AccordionItem>
+   965→              ))}
+   966→            </Accordion>
+   967→          </div>
+   968→        </div>
+   969→      </section>
+   970→
+   971→      {/* ── Final CTA ── */}
+   972→      <section className="py-16 sm:py-20">
+   973→        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   974→          <div className="relative overflow-hidden rounded-3xl brand-gradient p-8 text-center text-white sm:p-16">
+   975→            <div className="pointer-events-none absolute inset-0">
+   976→              <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+   977→              <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+   978→            </div>
+   979→            <div className="relative">
+   980→              <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+   981→                Join your neighborhood today
+   982→              </h2>
+   983→              <p className="mx-auto mt-4 max-w-xl text-base text-white/90 sm:text-lg">
+   984→                It takes 30 seconds to sign up. No passwords, no spam — just your trusted local community,
+   985→                one tap away.
+   986→              </p>
+   987→              <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+   988→                <Button
+   989→                  size="lg"
+   990→                  variant="secondary"
+   991→                  onClick={onGetStarted}
+   992→                  className="w-full gap-2 sm:w-auto"
+   993→                >
+   994→                  Create your free account
+   995→                  <ArrowRight className="h-4 w-4" />
+   996→                </Button>
+   997→                <Button
+   998→                  size="lg"
+   999→                  variant="outline"
+  1000→                  onClick={onLogin}
+  1001→                  className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white sm:w-auto"
+  1002→                >
+  1003→                  Login
+  1004→                </Button>
+  1005→              </div>
+  1006→              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/80">
+  1007→                <span className="flex items-center gap-1.5">
+  1008→                  <Users className="h-3.5 w-3.5" />
+  1009→                  12,000+ neighbors
+  1010→                </span>
+  1011→                <span className="flex items-center gap-1.5">
+  1012→                  <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
+  1013→                  4.8/5 rating
+  1014→                </span>
+  1015→                <span className="flex items-center gap-1.5">
+  1016→                  <MapPin className="h-3.5 w-3.5" />
+  1017→                  15+ cities
+  1018→                </span>
+  1019→              </div>
+  1020→            </div>
+  1021→          </div>
+  1022→        </div>
+  1023→      </section>
+  1024→
+  1025→      {/* ── Footer ── */}
+  1026→      <Footer />
+  1027→
+  1028→      {/* Mobile safe-area bottom padding */}
+  1029→      <div className="h-safe-bottom lg:hidden" />
+  1030→    </div>
+  1031→  );
+  1032→}
+  1033→

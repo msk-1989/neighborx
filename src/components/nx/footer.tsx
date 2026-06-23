@@ -7,6 +7,10 @@ import {
   Github,
   Twitter,
   Send,
+  Compass,
+  BookOpen,
+  Clapperboard,
+  Layers,
 } from "lucide-react";
 
 /**
@@ -29,9 +33,9 @@ export function Footer() {
           <div className="lg:col-span-5">
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              The Digital Operating System for Every Neighborhood in India.
-              Verified communities, local commerce, jobs, services, and a civic
-              safety network — all in one trusted super app.
+              The Neighborhood Operating System for India. A local search engine,
+              hyperlocal yellow pages, trusted commerce network, and community
+              safety net — 16 pillars, one verified app, society-first.
             </p>
             {/* Social row */}
             <div className="mt-5 flex items-center gap-2">
@@ -55,24 +59,28 @@ export function Footer() {
           {/* Link columns — span 7 cols together on lg, 2 cols on sm */}
           <div className="lg:col-span-7">
             <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-              {/* Platform */}
+              {/* Platform — the 16 pillars */}
               <nav aria-label="Platform">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                   Platform
                 </h3>
                 <ul className="mt-4 space-y-3 text-sm">
-                  {["Community Feed", "Marketplace", "Jobs & Services", "Emergency SOS"].map(
-                    (item) => (
-                      <li key={item}>
-                        <a
-                          href="#"
-                          className="tap-feedback text-muted-foreground transition-colors hover:text-primary"
-                        >
-                          {item}
-                        </a>
-                      </li>
-                    ),
-                  )}
+                  {[
+                    { label: "Neighborhood Search", Icon: Compass },
+                    { label: "Yellow Pages", Icon: BookOpen },
+                    { label: "Hyperlocal Reels", Icon: Clapperboard },
+                    { label: "Marketplace", Icon: Layers },
+                  ].map(({ label, Icon }) => (
+                    <li key={label}>
+                      <a
+                        href="#pillars"
+                        className="tap-feedback flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-primary" />
+                        {label}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </nav>
 
@@ -92,7 +100,7 @@ export function Footer() {
                   </li>
                   <li className="flex items-center gap-2 text-muted-foreground">
                     <Heart className="h-4 w-4 shrink-0 text-primary" />
-                    <span>Trusted &amp; inclusive</span>
+                    <span>Society-first, not global</span>
                   </li>
                 </ul>
               </nav>
