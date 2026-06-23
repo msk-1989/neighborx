@@ -720,3 +720,40 @@ Stage Summary:
 - ✅ Landing page + auth flow verified via Agent Browser on the live URL
 - Architecture: Next.js app → Vercel serverless; PostgreSQL → Neon (pooled for runtime, direct for build); chat service → not yet hosted separately (chat falls back to 4s HTTP polling, which works on Vercel — messages persist via /api/chat POST/GET against Neon).
 - SECURITY: User's GitHub PAT, Vercel token, and Neon DB password were used as ephemeral env vars only — NOT written to any file, NOT stored in git config or .vercel/. User MUST rotate all three credentials as they were shared in plaintext over chat.
+
+---
+Task ID: Fix-Prisma-Provider
+Agent: main (Z.ai Code)
+Task: Fix runtime Prisma error on Vercel ("the URL must start with the protocol file:") reported by user after initial deploy
+
+Work Log:
+- Root cause analysis: Fetched Vercel build logs via API (deployment dpl_8AG78PUpZ9GfKeSiLg1z9Lvg3E5V). Logs showed the scripts/vercel-prebuild.sh DID run correctly — it swapped provider sqlite→postgresql and ran `prisma generate` against the postgresql schema. However, @prisma/client's postinstall hook had already run `prisma generate` during `bun install` (when schema still said sqlite), and that sqlite client won at runtime. When the serverless function called prisma.user.findUnique(), the embedded sqlite provider validated DATABASE_URL and rejected the postgresql:// URL, demanding `file:`.
+- Decision: Abandon the fragile provider-swap approach. Commit provider="postgresql" permanently so EVERY prisma generate (postinstall, build, CLI) produces a postgres client. Local dev and Vercel both use Neon Postgres via the same env vars — single source of truth, single generated client, no race.
+- Changes made:
+  - prisma/schema.prisma: provider = "postgresql" (permanent). Rewrote header comment.
+  - .env: now points at Neon (pooled URL for DATABASE_URL, direct URL for DIRECT_DATABASE_URL). Stripped channel_binding=require (Prisma driver compat); pooled URL has pgbouncer=true&connect_timeout=15.
+  - .env.example: updated to document Neon-only setup.
+  - package.json: removed `env -u DATABASE_URL` from dev + db:seed scripts. (That flag was a sandbox workaround; with postgres it would wrongly strip Vercel's injected URL.)
+  - vercel.json: buildCommand simplified to `prisma generate && next build`.
+  - scripts/vercel-prebuild.sh: deleted (obsolete).
+- Local verification (with sandbox caveat):
+  - bun run db:generate → postgres client generated.
+  - bun run db:push → "The database is already in sync with the Prisma schema" against Neon.
+  - bun run lint → clean.
+  - Discovered sandbox shell exports DATABASE_URL=file:...custom.db (leftover SQLite value); dotenv doesn't override existing env vars, so the dev server read the stale SQLite URL and /api/me returned 500 with "URL must start with postgresql://". Fix: `unset DATABASE_URL DIRECT_DATABASE_URL` before starting dev server locally. This is sandbox-only — Vercel injects env vars directly, no shell override. After unset: /api/me → 200 (Arjun profile from Neon), /api/chat → 200 (persisted messages).
+- Committed: "fix(db): permanent postgresql provider — fixes runtime Prisma error on Vercel" (commit e7f40dc, 5 files changed, 21 insertions, 67 deletions).
+- Pushed to GitHub via PAT credential helper (8ebffb9..e7f40dc).
+- Redeployed to Vercel: `vercel deploy --prod` → build 18s, deploy 40s, aliased https://neighborx.vercel.app.
+- Live verification:
+  - curl https://neighborx.vercel.app/ → HTTP 200 in 1.29s.
+  - curl /api/me → HTTP 200, full Arjun Deshmukh user profile from Neon (id, name, email, phone, avatar, bio, role, verification flags...). THIS WAS THE 500 ERROR ENDPOINT — now fixed.
+  - curl /api/chat?room=general → HTTP 200, persisted chat messages with sender objects.
+  - curl /api/feed → HTTP 200, community posts.
+  - Agent Browser on https://neighborx.vercel.app/: title correct, landing page full render, "I already have an account" → auth screen, 6 demo users loaded from Neon DB, clicked Arjun → email auto-filled arjun@nx.in, ZERO console errors.
+
+Stage Summary:
+- ✅ FIXED: The runtime Prisma "URL must start with file:" error is resolved. Root cause was the postinstall generate racing with the prebuild swap; fixed by committing provider="postgresql" permanently.
+- ✅ LIVE on Vercel: https://neighborx.vercel.app — all DB-backed APIs returning 200 with real Neon data.
+- ✅ Local dev also works against Neon (after `unset DATABASE_URL` in the sandbox shell to defeat the stale exported SQLite URL).
+- Architecture now simplified: single provider (postgresql), single DB (Neon), single generated client — no swap scripts, no provider env var, no race conditions.
+- Reminder: user should still rotate the GitHub PAT, Vercel token, and Neon DB password (shared in plaintext earlier).
