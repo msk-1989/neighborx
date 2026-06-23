@@ -4,7 +4,7 @@ import * as React from "react";
 import { api } from "@/lib/api";
 import { useNX } from "@/lib/store";
 import type { Emergency, Listing, Job, Post, Business, Group, WatchAlert } from "@/lib/types";
-import { MODULES } from "../modules-config";
+import { MODULES, GROUP_ORDER } from "../modules-config";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,20 @@ export function Dashboard({ uid }: { uid: string }) {
   // Live modules only (no coming-soon) for the explore grid
   const liveModules = MODULES.filter((m) => m.key !== "dashboard" && !m.comingSoon);
 
+  // Group metadata for the Explore section — colors per pillar
+  const GROUP_META: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+    discovery: { label: "Discovery", color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30", dot: "bg-purple-500" },
+    community: { label: "Community", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", dot: "bg-emerald-500" },
+    safety: { label: "Safety", color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", dot: "bg-red-500" },
+    trust: { label: "Trust & Reputation", color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", dot: "bg-amber-500" },
+    commerce: { label: "Commerce", color: "text-teal-600", bg: "bg-teal-50 dark:bg-teal-950/30", dot: "bg-teal-500" },
+    civic: { label: "Civic", color: "text-pink-600", bg: "bg-pink-50 dark:bg-pink-950/30", dot: "bg-pink-500" },
+    ai: { label: "AI", color: "text-fuchsia-600", bg: "bg-fuchsia-50 dark:bg-fuchsia-950/30", dot: "bg-fuchsia-500" },
+  };
+
+  // Modules launched most recently — badged "NEW" in the Explore grid
+  const NEW_MODULES = new Set<string>(["reels", "yellowpages", "search"]);
+
   // Roadmap phases for the vision card — all four phases are now LIVE.
   // (Property, Society, Civic, AI, Commerce, Fundraising, Volunteer,
   //  Carpool, Borrow & Lend, Skills are all shipped modules.)
@@ -96,10 +110,10 @@ export function Dashboard({ uid }: { uid: string }) {
               </Badge>
               <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl">
                 Your Neighborhood. <br />
-                <span className="text-gradient">Built on Trust.</span>
+                <span className="text-gradient">Search. Trust. Thrive.</span>
               </h1>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                India&apos;s hyperlocal super app — verified community, safety network, and local commerce. We build community density first, then commerce.
+                The Neighborhood Operating System — local search, yellow pages, commerce, safety &amp; society tools. 16 pillars, one verified app, society-first.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" className="gap-1.5" onClick={() => setModule("feed")}>
@@ -159,73 +173,101 @@ export function Dashboard({ uid }: { uid: string }) {
         })}
       </div>
 
-      {/* two-column: trending + explore modules */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* trending posts */}
-        <Card className="p-4 lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <span className="font-semibold">Trending in {nb.area}</span>
-            </div>
-            <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setModule("feed")}>
-              See all <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+      {/* trending posts — full width */}
+      <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <span className="font-semibold">Trending in {nb.area}</span>
           </div>
-          <div className="space-y-3">
-            {trending.length === 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground">Loading posts...</div>
-            )}
-            {trending.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setModule("feed")}
-                className="tap-feedback flex w-full items-start gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent/40"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary text-xs font-bold">
-                  {p.author.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
+          <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setModule("feed")}>
+            See all <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {trending.length === 0 && (
+            <div className="py-6 text-center text-sm text-muted-foreground">Loading posts...</div>
+          )}
+          {trending.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setModule("feed")}
+              className="tap-feedback flex w-full items-start gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent/40"
+            >
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary text-xs font-bold">
+                {p.author.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{p.author.name}</span>
+                  <span>· {p.author.society}</span>
+                  <span>· {timeAgo(p.createdAt)}</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{p.author.name}</span>
-                    <span>· {p.author.society}</span>
-                    <span>· {timeAgo(p.createdAt)}</span>
-                  </div>
-                  <p className="mt-0.5 line-clamp-2 text-sm">{p.content}</p>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>❤️ {p.likes}</span>
-                    <span>💬 {p.comments.length}</span>
-                    {p.tag && <Badge variant="outline" className="px-1.5 py-0 text-[10px]">{p.tag}</Badge>}
-                  </div>
+                <p className="mt-0.5 line-clamp-2 text-sm">{p.content}</p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>❤️ {p.likes}</span>
+                  <span>💬 {p.comments.length}</span>
+                  {p.tag && <Badge variant="outline" className="px-1.5 py-0 text-[10px]">{p.tag}</Badge>}
                 </div>
-              </button>
-            ))}
-          </div>
-        </Card>
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
 
-        {/* explore modules — live only */}
-        <Card className="p-4">
-          <div className="mb-3 flex items-center gap-2">
+      {/* explore all modules — grouped by pillar, every tool we have */}
+      <Card className="p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="font-semibold">Explore</span>
+            <span className="font-semibold">Explore all modules</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {liveModules.map((m) => {
-              const Icon = m.icon;
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => setModule(m.key)}
-                  className="tap-feedback flex flex-col items-start gap-1.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/40 hover:bg-accent/30"
-                >
-                  <Icon className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-medium leading-tight">{m.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-      </div>
+          <Badge variant="secondary" className="text-xs">{liveModules.length} tools</Badge>
+        </div>
+        <div className="space-y-4">
+          {GROUP_ORDER.filter((g) => g !== "home").map((group) => {
+            const meta = GROUP_META[group];
+            if (!meta) return null;
+            const mods = liveModules.filter((m) => m.group === group);
+            if (mods.length === 0) return null;
+            return (
+              <div key={group}>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{meta.label}</span>
+                  <span className="text-[10px] text-muted-foreground/70">· {mods.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {mods.map((m) => {
+                    const Icon = m.icon;
+                    const isNew = NEW_MODULES.has(m.key);
+                    return (
+                      <button
+                        key={m.key}
+                        onClick={() => setModule(m.key)}
+                        className="tap-feedback relative flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/40 hover:bg-accent/30 hover:shadow-sm"
+                      >
+                        <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-lg", meta.bg)}>
+                          <Icon className={cn("h-4 w-4", meta.color)} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium leading-tight">{m.label}</span>
+                            {isNew && (
+                              <Badge className="px-1 py-0 text-[8px] leading-none">NEW</Badge>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-[10px] text-muted-foreground line-clamp-1">{m.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Phase roadmap card */}
       <Card className="p-4">
