@@ -683,3 +683,40 @@ Stage Summary:
 - Artifacts produced: scripts/vercel-prebuild.sh, .env.example, DEPLOY.md (full deploy guide), updated vercel.json, portable chat service, configurable frontend socket URL.
 - BLOCKER for actual Vercel deploy: `git push origin main` must run from a machine with GitHub credentials (sandbox has none). After push, user imports repo on Vercel, sets 3-4 env vars (DATABASE_PROVIDER, DATABASE_URL, DIRECT_DATABASE_URL, optional NEXT_PUBLIC_CHAT_SERVICE_URL), and deploys. Full step-by-step in DEPLOY.md.
 - Known architecture split for production: Next.js app → Vercel; PostgreSQL → Neon; socket.io chat service → Render/Railway/Fly (Vercel can't hold WebSockets). Chat has HTTP-polling fallback so it still works (non-instant) if the socket service isn't hosted.
+
+---
+Task ID: Vercel-Deploy
+Agent: main (Z.ai Code)
+Task: Push NeighborX to GitHub, set up Neon Postgres, and deploy to Vercel (user provided GitHub PAT, Vercel token, and Neon connection string)
+
+Work Log:
+- Read previous worklog entry (Vercel-Ready) to understand the codebase was already made Vercel-ready with a prebuild provider-swap script.
+- Step 1 — GitHub push: Used the user's PAT via a one-shot credential helper (NOT stored in git config or remote URL). `git -c credential.helper="!f() { echo username=x-access-token; echo password=$TOKEN; }; f" push origin main` → SUCCESS. All 17 commits pushed to msk-1989/neighborx (0cdd2bb..8ebffb9).
+- Step 2 — Neon schema push: Temporarily rewrote prisma/schema.prisma provider to "postgresql", ran `DATABASE_URL=$NEON_DIRECT DIRECT_DATABASE_URL=$NEON_DIRECT npx prisma db push --skip-generate` → "The database is already in sync with the Prisma schema." (tables existed from a prior push). Restored the sqlite schema for local dev. Constructed the direct URL by stripping "-pooler" from the hostname; stripped channel_binding=require (Prisma compatibility) and used sslmode=require.
+- Step 3 — Vercel CLI: `npm install -g vercel` → Vercel CLI 54.15.0. Authenticated with `vercel whoami --token $TOKEN` → team "sk-s-projects8".
+- Step 4 — Create project + env vars: 
+  - `vercel project add neighborx --token $TOKEN` → project prj_x7GbFaxhGtQsrIU5gzVKcMZ7GmWf created.
+  - Set 3 env vars (DATABASE_PROVIDER=postgresql, DATABASE_URL=<neon pooled>, DIRECT_DATABASE_URL=<neon direct>) across all 3 environments (production/preview/development) = 9 total via Vercel REST API POST /v9/projects/neighborx/env?upsert=true. Verified all 9 present.
+- Step 5 — Deploy: First attempt used `vercel deploy --prod --yes` but it picked up a STALE .vercel/project.json that linked to the "my-project" project (not neighborx). Deploy succeeded but to the wrong project (aliased my-project-pied-six.vercel.app). Fixed by rewriting .vercel/project.json with {projectId: prj_x7GbFaxhGtQsrIU5gzVKcMZ7GmWf, orgId: team_00KjN24CkQtXcDj3U8gUWsyt, projectName: neighborx} and redeploying. Build: 34s (Turbopack traced, all API routes created as serverless functions). Deploy: 55s total.
+  - PRODUCTION URL: https://neighborx.vercel.app ✅
+- Step 6 — Live verification (mandatory Agent Browser):
+  - curl https://neighborx.vercel.app/ → HTTP 200 in 1.78s, title "NeighborX — India's Hyperlocal Community & Commerce Super App", no error markers.
+  - DB-backed API tests (confirms Neon connection works from Vercel serverless):
+    - GET /api/chat?room=general → 200, returns JSON array with Arjun Deshmukh's message "Testing persistent Neon Postgres on Vercel! This message should survive cold starts. 🎉" + sender object with avatar/bio.
+    - GET /api/feed → 200, returns community posts (cricket tournament celebration post with 89 likes, etc.).
+    - GET /api/me → 200, returns Arjun Deshmukh's full user profile (id, name, email, phone, avatar, bio, role).
+  - Agent Browser on https://neighborx.vercel.app/:
+    - Landing page renders fully: hero "Your Neighborhood. Built on Trust.", 20+ feature sections (Community Feed, Real-time Chat, Marketplace, Services, Local Jobs, Emergency SOS, Neighborhood Watch, Verified Businesses, Reputation & Rewards, Events & Gatherings, Lost & Found, 5-Level Verification), How it works (Register with OTP / Verify identity / Connect & thrive), For Residents/Businesses/Providers/Employers, Pricing, FAQ, footer. All interactive buttons present.
+    - Clicked "I already have an account" → auth screen. 6 demo user buttons loaded from Neon DB (Arjun Deshmukh 👑 SUPER_ADMIN, Priya Kulkarni 🏘️ SOCIETY_ADMIN, Ravi Shinde 🏪 BUSINESS_OWNER, Anita Desai 🛠️ SERVICE_PROVIDER, Mahesh Jadhav 💼 EMPLOYER, Vijay More 🏠 RESIDENT) — confirms live DB read.
+    - Clicked "Arjun Deshmukh" → email textbox auto-filled with "arjun@nx.in" from DB.
+    - Zero console errors, zero page errors throughout.
+- Cleaned up temp files (vercel-live-proof.png, nx-home.html). .vercel/ stays gitignored.
+
+Stage Summary:
+- ✅ LIVE on Vercel: https://neighborx.vercel.app
+- ✅ GitHub repo up to date: https://github.com/msk-1989/neighborx (17 commits pushed)
+- ✅ Neon Postgres connected and serving real data on Vercel serverless
+- ✅ All DB-backed APIs verified working (chat, feed, me)
+- ✅ Landing page + auth flow verified via Agent Browser on the live URL
+- Architecture: Next.js app → Vercel serverless; PostgreSQL → Neon (pooled for runtime, direct for build); chat service → not yet hosted separately (chat falls back to 4s HTTP polling, which works on Vercel — messages persist via /api/chat POST/GET against Neon).
+- SECURITY: User's GitHub PAT, Vercel token, and Neon DB password were used as ephemeral env vars only — NOT written to any file, NOT stored in git config or .vercel/. User MUST rotate all three credentials as they were shared in plaintext over chat.
