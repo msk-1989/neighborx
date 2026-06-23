@@ -89,7 +89,7 @@ export function Skills({ uid }: { uid: string }) {
     setLoading(true);
     try {
       const data = await api<SkillListing[]>(
-        `/api/skills?category=${cat}&mode=${mode}&q=${encodeURIComponent(q)}`
+        `/api/skill-listings?category=${cat}&mode=${mode}&q=${encodeURIComponent(q)}`
       );
       setItems(data);
     } finally {
@@ -282,7 +282,7 @@ function SkillDialog({
     }
     setSaving(true);
     try {
-      await api(`/api/skills?uid=${uid}`, {
+      await api(`/api/skill-listings?uid=${uid}`, {
         method: "POST",
         body: JSON.stringify(form),
       });
