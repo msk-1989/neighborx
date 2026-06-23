@@ -365,3 +365,167 @@ export function nextTier(points: number): { tier: ReputationTier; min: number; l
   }
   return null;
 }
+
+// =====================================================================
+// Phase 3-4 — Balance Features
+// =====================================================================
+
+export interface BorrowItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  condition: string;
+  imageUrl?: string | null;
+  dailyRate: number;
+  deposit: number;
+  duration: string;
+  location: string;
+  status: string;
+  ownerId: string;
+  owner: User;
+  createdAt: string;
+}
+
+export interface SkillListing {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  mode: string;
+  level: string;
+  rate: number;
+  location: string;
+  availability: string;
+  status: string;
+  teacherId: string;
+  teacher: User;
+  createdAt: string;
+}
+
+export interface CarpoolRide {
+  id: string;
+  type: string;
+  fromLocation: string;
+  toLocation: string;
+  date: string;
+  time: string;
+  seats: number;
+  seatsFilled: number;
+  recurring: string;
+  notes?: string | null;
+  contribution: number;
+  status: string;
+  driverId: string;
+  driver: User;
+  createdAt: string;
+}
+
+export interface VolunteerOpportunity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  location: string;
+  urgency: string;
+  date?: string | null;
+  contactInfo: string;
+  slots: number;
+  filled: number;
+  status: string;
+  organizerId: string;
+  organizer: User;
+  signups?: VolunteerSignup[];
+  createdAt: string;
+}
+
+export interface VolunteerSignup {
+  id: string;
+  opportunityId: string;
+  userId: string;
+  user: User;
+  status: string;
+  createdAt: string;
+}
+
+export interface Fundraiser {
+  id: string;
+  title: string;
+  description: string;
+  story: string;
+  category: string;
+  goal: number;
+  raised: number;
+  imageUrl?: string | null;
+  beneficiaryName: string;
+  endDate: string;
+  verified: boolean;
+  status: string;
+  organizerId: string;
+  organizer: User;
+  donations?: FundraiserDonation[];
+  createdAt: string;
+}
+
+export interface FundraiserDonation {
+  id: string;
+  fundraiserId: string;
+  donorId: string;
+  donor: User;
+  amount: number;
+  message?: string | null;
+  anonymous: boolean;
+  createdAt: string;
+}
+
+export interface PropertyListing {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  propertyType: string;
+  price: number;
+  rent: number;
+  deposit: number;
+  area: string;
+  furnishing: string;
+  address: string;
+  imageUrl?: string | null;
+  bedrooms: number;
+  bathrooms: number;
+  amenities?: string | null;
+  location: string;
+  status: string;
+  ownerId: string;
+  owner: User;
+  createdAt: string;
+}
+
+export interface CommerceProduct {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl?: string | null;
+  storeName: string;
+  deliveryTime: string;
+  inStock: boolean;
+  location: string;
+  sellerId: string;
+  seller: User;
+  createdAt: string;
+}
+
+export interface CommerceOrder {
+  id: string;
+  productId: string;
+  buyerId: string;
+  buyer: User;
+  qty: number;
+  total: number;
+  note?: string | null;
+  status: string;
+  createdAt: string;
+}

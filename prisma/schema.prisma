@@ -74,6 +74,17 @@ model User {
   reportsFiled   AbuseReport[]  @relation("ReportReporter")
   reportsHandled AbuseReport[]  @relation("ReportHandler")
   payments       Payment[]
+  // Phase 3-4 balance features
+  borrowItems    BorrowItem[]
+  skills         SkillListing[]
+  carpools       CarpoolRide[]
+  volunteerOps   VolunteerOpportunity[]
+  volunteerSignups VolunteerSignup[]
+  fundraisers    Fundraiser[]
+  donations      FundraiserDonation[]
+  properties     PropertyListing[]
+  commerceProducts CommerceProduct[]
+  commerceOrders CommerceOrder[]
 }
 
 model Post {
@@ -640,4 +651,208 @@ model OtpCode {
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+}
+
+// =====================================================================
+// Phase 3-4 — Balance Features
+// =====================================================================
+
+// Borrow & Lend — share books, tools, equipment, medical gear, sports gear
+model BorrowItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  // category: BOOKS | TOOLS | EQUIPMENT | MEDICAL | SPORTS | APPLIANCES | OTHER
+  category    String   @default("OTHER")
+  // type: LEND (owner offering) | BORROW (neighbor requesting)
+  type        String   @default("LEND")
+  condition   String   @default("Good") // New | Good | Fair
+  imageUrl    String?
+  // dailyRate: 0 = free, else ₹ per day
+  dailyRate   Int      @default(0)
+  // security deposit in ₹
+  deposit     Int      @default(0)
+  // max lend duration, e.g. "7 days"
+  duration    String   @default("7 days")
+  location    String   @default("Khair Nagar, Udgir")
+  // status: AVAILABLE | BORROWED | RETURNED
+  status      String   @default("AVAILABLE")
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Skill Exchange — teach & learn skills peer-to-peer
+model SkillListing {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  // category: LANGUAGE | ACADEMIC | COMPUTER | MUSIC | ART | PROFESSIONAL | OTHER
+  category    String   @default("OTHER")
+  // mode: OFFLINE | ONLINE | BOTH
+  mode        String   @default("BOTH")
+  // level: BEGINNER | INTERMEDIATE | ADVANCED
+  level       String   @default("BEGINNER")
+  // rate per hour in ₹; 0 = free / skill-swap
+  rate        Int      @default(0)
+  location    String   @default("Khair Nagar, Udgir")
+  availability String  @default("Weekends")
+  // status: ACTIVE | PAUSED
+  status      String   @default("ACTIVE")
+  teacherId   String
+  teacher     User     @relation(fields: [teacherId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Carpool & Mobility — share rides with neighbors
+model CarpoolRide {
+  id          String   @id @default(cuid())
+  // type: OFFER (offering a ride) | REQUEST (need a ride)
+  type        String   @default("OFFER")
+  fromLocation String
+  toLocation  String
+  date        String
+  time        String
+  seats       Int      @default(1)
+  seatsFilled Int      @default(0)
+  // recurring: "One-time" | "Mon-Fri" | "Daily" | "Weekends"
+  recurring   String   @default("One-time")
+  notes       String?
+  // fuel share contribution in ₹; 0 = free
+  contribution Int     @default(0)
+  // status: OPEN | FULL | CLOSED
+  status      String   @default("OPEN")
+  driverId    String
+  driver      User     @relation(fields: [driverId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Volunteer Network — blood donors, disaster response, community service
+model VolunteerOpportunity {
+  id          String   @id @default(cuid())
+  // type: BLOOD_DONOR | DISASTER | ELDERLY | TEACHING | ENVIRONMENT | ANIMALS | OTHER
+  type        String   @default("OTHER")
+  title       String
+  description String
+  location    String
+  // urgency: LOW | MEDIUM | HIGH | CRITICAL
+  urgency     String   @default("MEDIUM")
+  date        String?
+  contactInfo String
+  slots       Int      @default(1)
+  filled      Int      @default(0)
+  // status: OPEN | FILLED | CLOSED
+  status      String   @default("OPEN")
+  organizerId String
+  organizer   User     @relation(fields: [organizerId], references: [id])
+  signups     VolunteerSignup[]
+  createdAt   DateTime @default(now())
+}
+
+model VolunteerSignup {
+  id            String   @id @default(cuid())
+  opportunityId String
+  opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  // status: INTERESTED | CONFIRMED | ATTENDED | CANCELLED
+  status        String   @default("INTERESTED")
+  createdAt     DateTime @default(now())
+
+  @@unique([opportunityId, userId])
+}
+
+// Fundraising — community crowdfunding
+model Fundraiser {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  story       String
+  // category: MEDICAL | EDUCATION | NGO | COMMUNITY | EMERGENCY | ANIMALS
+  category    String   @default("COMMUNITY")
+  goal        Int      @default(10000)
+  raised      Int      @default(0)
+  imageUrl    String?
+  beneficiaryName String
+  endDate     String
+  verified    Boolean  @default(false)
+  // status: ACTIVE | CLOSED | GOAL_REACHED
+  status      String   @default("ACTIVE")
+  organizerId String
+  organizer   User     @relation(fields: [organizerId], references: [id])
+  donations   FundraiserDonation[]
+  createdAt   DateTime @default(now())
+}
+
+model FundraiserDonation {
+  id           String   @id @default(cuid())
+  fundraiserId String
+  fundraiser   Fundraiser @relation(fields: [fundraiserId], references: [id], onDelete: Cascade)
+  donorId      String
+  donor        User     @relation(fields: [donorId], references: [id])
+  amount       Int
+  message      String?
+  anonymous    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+// Property — hyperlocal real estate (buy, sell, rent, PG, hostel, commercial)
+model PropertyListing {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  // type: SELL | RENT | PG | HOSTEL | COMMERCIAL
+  type        String   @default("RENT")
+  // propertyType: 1BHK | 2BHK | 3BHK | 4BHK | PLOT | SHOP | OFFICE | VILLA
+  propertyType String  @default("2BHK")
+  price       Int      @default(0)
+  rent        Int      @default(0)
+  deposit     Int      @default(0)
+  area        String   @default("Sq.ft")
+  furnishing  String   @default("SEMI") // FURNISHED | SEMI | UNFURNISHED
+  address     String
+  imageUrl    String?
+  bedrooms    Int      @default(2)
+  bathrooms   Int      @default(1)
+  amenities   String?
+  location    String   @default("Khair Nagar, Udgir")
+  // status: AVAILABLE | SOLD | RENTED
+  status      String   @default("AVAILABLE")
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// Multinex Commerce — hyperlocal grocery, food, medicine, parcels, rentals
+model CommerceProduct {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  // category: GROCERY | FOOD | MEDICINE | PARCELS | RENTALS
+  category    String   @default("GROCERY")
+  price       Int
+  imageUrl    String?
+  storeName   String
+  // deliveryTime: e.g. "30 min", "2 hours", "Same day"
+  deliveryTime String  @default("Same day")
+  inStock     Boolean  @default(true)
+  location    String   @default("Khair Nagar, Udgir")
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id])
+  orders      CommerceOrder[]
+  createdAt   DateTime @default(now())
+}
+
+model CommerceOrder {
+  id          String   @id @default(cuid())
+  productId   String
+  product     CommerceProduct @relation(fields: [productId], references: [id])
+  buyerId     String
+  buyer       User     @relation(fields: [buyerId], references: [id])
+  qty         Int      @default(1)
+  total       Int
+  note        String?
+  // status: PLACED | CONFIRMED | OUT_FOR_DELIVERY | DELIVERED | CANCELLED
+  status      String   @default("PLACED")
+  createdAt   DateTime @default(now())
 }

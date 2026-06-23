@@ -80,17 +80,17 @@ export const MODULES: ModuleDef[] = [
 
   // ── Phase 3: Property, Society, Civic ──
   { key: "complaints", label: "Civic Complaints", icon: ShieldAlert, desc: "Civic issues & AI classifier", group: "civic", phase: 3 },
-  { key: "property", label: "Property", icon: Home, desc: "Buy, sell, rent, PG — hyperlocal real estate", group: "coming-soon", phase: 3, comingSoon: true },
-  { key: "society", label: "Society Management", icon: Building2, desc: "Visitor, maintenance, notices, polls", group: "coming-soon", phase: 3, comingSoon: true },
+  { key: "property", label: "Property", icon: Home, desc: "Buy, sell, rent, PG — hyperlocal real estate", group: "commerce", phase: 3 },
+  { key: "society", label: "Society Management", icon: Building2, desc: "Visitor, maintenance, notices, polls", group: "civic", phase: 3 },
 
   // ── Phase 4: AI, Commerce, Community ──
   { key: "assistant", label: "AI Assistant", icon: Sparkles, desc: "Neighborhood help bot", group: "ai", phase: 4 },
-  { key: "commerce", label: "Multinex Commerce", icon: ShoppingBasket, desc: "Grocery, food, medicine, parcels", group: "coming-soon", phase: 4, comingSoon: true },
-  { key: "fundraising", label: "Fundraising", icon: HeartHandshake, desc: "Medical, education, NGO campaigns", group: "coming-soon", phase: 4, comingSoon: true },
-  { key: "volunteer", label: "Volunteer Network", icon: HandHeart, desc: "Blood donors, disaster, community", group: "coming-soon", phase: 4, comingSoon: true },
-  { key: "carpool", label: "Carpool & Mobility", icon: Car, desc: "Office, school, shared rides", group: "coming-soon", phase: 4, comingSoon: true },
-  { key: "borrow", label: "Borrow & Lend", icon: PackageOpen, desc: "Books, tools, equipment sharing", group: "coming-soon", phase: 4, comingSoon: true },
-  { key: "skills", label: "Skill Exchange", icon: GraduationCap, desc: "Language, music, computer training", group: "coming-soon", phase: 4, comingSoon: true },
+  { key: "commerce", label: "Multinex Commerce", icon: ShoppingBasket, desc: "Grocery, food, medicine, parcels", group: "commerce", phase: 4 },
+  { key: "fundraising", label: "Fundraising", icon: HeartHandshake, desc: "Medical, education, NGO campaigns", group: "community", phase: 4 },
+  { key: "volunteer", label: "Volunteer Network", icon: HandHeart, desc: "Blood donors, disaster, community", group: "community", phase: 4 },
+  { key: "carpool", label: "Carpool & Mobility", icon: Car, desc: "Office, school, shared rides", group: "community", phase: 4 },
+  { key: "borrow", label: "Borrow & Lend", icon: PackageOpen, desc: "Books, tools, equipment sharing", group: "community", phase: 4 },
+  { key: "skills", label: "Skill Exchange", icon: GraduationCap, desc: "Language, music, computer training", group: "community", phase: 4 },
 
   // NOTE: The Admin Console is NO LONGER a sidebar tab. It is a completely
   // separate shell (AdminShell) accessed via the "Admin Console" button in
@@ -119,7 +119,6 @@ export const GROUP_ORDER: ModuleDef["group"][] = [
   "commerce",
   "civic",
   "ai",
-  "coming-soon",
 ];
 
 export const PHASE_LABELS: Record<number, string> = {

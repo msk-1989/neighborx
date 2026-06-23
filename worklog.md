@@ -876,3 +876,125 @@ Stage Summary:
 - ✅ Auth screen keeps its minimal one-line copyright footer (gateway screen, not a panel).
 - ✅ Live on Vercel: https://neighborx.vercel.app — fully verified end-to-end (landing footer present, app panel no footer, admin console no footer, zero console errors).
 - Note: when in-app content is short (e.g. the dashboard's metric cards on a tall desktop viewport), there is now empty background space below the content instead of a footer capping it. This is standard app-shell behavior (Stripe, Vercel, GitHub dashboards all do this) and is the intended result of removing the footer per the user's request.
+
+---
+Task ID: Balance-Build-1
+Agent: full-stack-developer
+Task: Build Borrow & Lend, Skill Exchange, Carpool modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md (bottom) to confirm prior state: codebase is live on Vercel (neighborx.vercel.app), admin shell separated, footers removed from panels. Prisma provider permanently postgresql against Neon. Models BorrowItem, SkillListing, CarpoolRide already exist in prisma/schema.prisma (lines 661-728) with the exact fields specified. TypeScript interfaces already exported from src/lib/types.ts (lines 373-423): BorrowItem {owner: User}, SkillListing {teacher: User}, CarpoolRide {driver: User}.
+- Studied the existing marketplace module as the reference pattern: src/app/api/marketplace/route.ts (currentUser helper reads ?uid= param defaulting to arjun@nx.in, GET filters by category/q with status AVAILABLE, POST creates with user.id) and src/components/nx/modules/marketplace.tsx (search Input + category chip row + responsive grid of Cards with image/price/avatar/timeAgo/Chat button, loading skeleton via animate-pulse, empty state Card, Create Dialog with form state, toast.success/error, openChat(`listing-${id}`)).
+- Confirmed shared utilities: `api<T>(path, init?)` from @/lib/api, `inr(n)` and `timeAgo(iso)` from @/lib/types, `UserAvatar` from ../user-bits (props: user, size), `useNX((s) => s.openChat)` from @/lib/store, `cn` from @/lib/utils, `toast` from sonner.
+
+- Created src/app/api/borrow/route.ts:
+  - currentUser(req) helper identical to marketplace pattern.
+  - GET: filters by `category` (cat !== "ALL"), `type` (LEND/BORROW, !== "ALL"), `q` (OR on title+description contains), and `{ status: "AVAILABLE" }`. Includes owner. Ordered by createdAt desc.
+  - POST: creates BorrowItem with title/description/category/type/condition/imageUrl/dailyRate/deposit/duration/location/ownerId. Defaults: category OTHER, type LEND, condition Good, duration "7 days", location falls back to `${user.area}, ${user.city}`. Numeric coercion via Number()||0. Includes owner in response.
+
+- Created src/app/api/skills/route.ts:
+  - GET: filters by `category`, `mode` (OFFLINE/ONLINE/BOTH), `q` (OR title+description), `{ status: "ACTIVE" }`. Includes teacher. Ordered createdAt desc.
+  - POST: creates SkillListing with title/description/category/mode/level/rate/location/availability/teacherId. Defaults: category OTHER, mode BOTH, level BEGINNER, availability "Weekends", location falls back to user area. Includes teacher.
+
+- Created src/app/api/carpool/route.ts:
+  - GET: filters by `type` (OFFER/REQUEST, !== "ALL"), `q` (OR on fromLocation+toLocation+notes contains), `{ status: "OPEN" }`. Includes driver. Ordered createdAt desc.
+  - POST: creates CarpoolRide with type/fromLocation/toLocation/date/time/seats/seatsFilled(=0)/recurring/notes/contribution/status(OPEN)/driverId. Defaults: type OFFER, seats 1, recurring "One-time". Includes driver.
+
+- Created src/components/nx/modules/borrow.tsx — `export function Borrow({ uid })`:
+  - Top row: search Input (flex-1) + Type Select (All/Lending/Want to borrow) + Post Button (Dialog trigger).
+  - Category chip row: ALL, 📚 Books, 🔧 Tools, 🏋️ Equipment, 🩺 Medical, ⚽ Sports, 🔌 Appliances, 📦 Other.
+  - Card grid (sm:2, lg:3 cols): each card has 4:3 image (HandHelping fallback icon), top-left type badge (emerald LEND / amber BORROW), top-right condition badge, category outline badge, title (line-clamp-1), description (line-clamp-2), rate row (₹/day or Free, deposit with ShieldCheck, duration with Clock), location with MapPin, footer with UserAvatar + first name + timeAgo + Chat button calling openChat(`borrow-${id}`).
+  - Loading skeleton: 6 animate-pulse Cards.
+  - Empty state: "No items found. Be the first to share something with your neighbors!"
+  - BorrowDialog form: title*, description, type Select (LEND/BORROW), category Select, condition Select (New/Good/Fair), duration Input, dailyRate + deposit number Inputs, imageUrl Input, location Input. Validates title. toast.success on create ("Item listed for lending!" / "Borrow request posted!"), toast.error on failure.
+
+- Created src/components/nx/modules/skills.tsx — `export function Skills({ uid })`:
+  - Top row: search Input + Mode Select (All/In-person/Online/Both) + Teach Button (Dialog trigger).
+  - Category chip row: ALL, 🗣️ Language, 📚 Academic, 💻 Computer, 🎵 Music, 🎨 Art, 💼 Professional, 📦 Other.
+  - Card grid: each card has a gradient header (emerald→amber→rose tint) with a GraduationCap icon tile, top-right mode badge with ModeIcon (Wifi/Users/Video), top-left level pill (emerald BEGINNER / amber INTERMEDIATE / rose ADVANCED via levelColor helper), category outline badge, title, description (line-clamp-2), rate row (₹/hr or "Free / Swap" + availability with CalendarClock), location with MapPin, footer with teacher UserAvatar + name + timeAgo + Chat button calling openChat(`skills-${id}`).
+  - Loading skeleton, empty state ("No skill listings found. Be the first to teach or offer a skill swap!").
+  - SkillDialog form: title*, description, category Select, mode Select (BOTH/OFFLINE/ONLINE), level Select (BEGINNER/INTERMEDIATE/ADVANCED), rate Input (₹/hr), availability Input, location Input. Validates title. toast.success ("Skill listing posted! 🎓"), toast.error on failure.
+
+- Created src/components/nx/modules/carpool.tsx — `export function Carpool({ uid })`:
+  - Top row: search Input + Post ride Button (Dialog trigger). No separate category Select — type filter is the chip row.
+  - Type chip row: All rides / 🚗 Offering / 🙏 Need a ride.
+  - Card grid: each card has a gradient header (sky→emerald→amber tint) with a Car icon tile (or Navigation icon for REQUEST type), top-left type badge (emerald OFFER / amber REQUEST), top-right FULL badge when seatsLeft===0. Route row: fromLocation → toLocation with ArrowRight. Info row: date (Calendar), time (Clock), seats-left (Users, emerald unless 0 then rose) — only for OFFER, recurring (Repeat) if not One-time. Contribution row: ₹ amount or "Free" + "fuel share" label. Notes (line-clamp-2) if present. Footer with driver UserAvatar + name + timeAgo + Chat button calling openChat(`carpool-${id}`).
+  - Loading skeleton, empty state ("No rides found. Be the first to offer or request a ride!").
+  - CarpoolDialog form: type Select (OFFER/REQUEST), fromLocation*, toLocation*, date* (date input), time* (time input), recurring Select (One-time/Mon-Fri/Daily/Weekends), seats Input (only shown for OFFER), contribution Input (shown for REQUEST inline + separate row for OFFER), notes Textarea. Validates from/to/date/time. toast.success ("Ride offered!" / "Ride request posted!"), toast.error on failure.
+
+- Removed an unused MapPin import from carpool.tsx (caught during self-review before lint).
+- Ran `bun run lint` → exit 0, zero errors, zero warnings across all 6 new files. Verified dev.log shows no compile errors from the new routes.
+
+Stage Summary:
+- 3 API routes created (GET+POST each): src/app/api/borrow/route.ts, src/app/api/skills/route.ts, src/app/api/carpool/route.ts. All follow the marketplace pattern exactly (currentUser helper, query-param filters, status gate, include relation, createdAt desc ordering).
+- 3 client component modules created: src/components/nx/modules/{borrow,skills,carpool}.tsx — each exports a named function ({Borrow, Skills, Carpool}) taking `{ uid }`. Each has search + filters + chips + responsive card grid + loading skeleton + empty state + Create Dialog + toast feedback + Chat button wired to openChat with module-prefixed room id.
+- All 6 files lint clean (0 errors, 0 warnings). No existing files modified (app-shell.tsx, modules-config.ts, types.ts untouched per instructions — main agent will wire the modules into the shell/config).
+- No seed data written (per instructions — main agent handles seeding).
+- No tests written (per instructions).
+- All Prisma field types respected: Int fields use Number(body.x)||0 coercion, String? fields use body.x||null, String fields use body.x||"" or sensible defaults, location falls back to `${user.area}, ${user.city}` when not provided.
+
+---
+Task ID: Balance-Build-2
+Agent: full-stack-developer
+Task: Build Volunteer Network, Fundraising, Property modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md to confirm prior state (Admin-Shell-Separation + Remove-Panel-Footers tasks done & deployed; admin is a separate shell, panels are footer-free).
+- Studied existing marketplace module + API route as the canonical pattern to follow; confirmed UserAvatar export from ../user-bits, api() helper from @/lib/api, useNX((s) => s.openChat), inr()/timeAgo() from @/lib/types, dynamic-route signature { params: Promise<{ id: string }> } in Next.js 16 (matched events/[id]/rsvp + jobs/[id]/apply).
+- Confirmed the 5 Prisma models already exist in prisma/schema.prisma (VolunteerOpportunity, VolunteerSignup with @@unique([opportunityId, userId]), Fundraiser, FundraiserDonation, PropertyListing) and that types.ts already exports the matching TS interfaces.
+- Created directory tree with mkdir -p for the two dynamic-route API folders ([id]/signup, [id]/donate) + the three top-level API folders (volunteer, fundraising, property).
+- Built 5 API routes:
+  1. src/app/api/volunteer/route.ts — GET filters by type/urgency/q (only OPEN), includes organizer + signups.user, orders by urgency desc then createdAt desc. POST creates with uid, defaults contactInfo to user.phone/email, defaults location to user.area/city.
+  2. src/app/api/volunteer/[id]/signup/route.ts — POST creates VolunteerSignup (unique constraint → 409 on duplicate), increments opportunity.filled, sets status FILLED when filled >= slots.
+  3. src/app/api/fundraising/route.ts — GET filters by category/q (only ACTIVE), includes organizer + donations.donor, orders by verified desc then createdAt desc. POST creates with uid.
+  4. src/app/api/fundraising/[id]/donate/route.ts — POST creates FundraiserDonation (validates amount > 0), increments fundraiser.raised, sets status GOAL_REACHED when raised >= goal.
+  5. src/app/api/property/route.ts — GET filters by type/propertyType/q (only AVAILABLE), q matches title OR address OR location, includes owner, orders by createdAt desc. POST creates with uid, all numeric fields coerced via Number().
+- Built 3 frontend client modules, each mirroring the marketplace pattern (search input + category chips, create Dialog, responsive sm:grid-cols-2 lg:grid-cols-3, animate-pulse skeleton cards, empty-state Card, toast.success/error, UserAvatar + timeAgo in card footer):
+  6. src/components/nx/modules/volunteer.tsx — Volunteer({ uid }). 7 categories (Blood Donor 🩸, Disaster 🆘, Elderly 👴, Teaching 📚, Environment 🌱, Animals 🐾, Other 📦) each with a matching lucide icon (Droplet, Siren, Heart, BookOpen, Leaf, PawPrint, Package). Card shows color-coded urgency badge (LOW=slate, MEDIUM=amber, HIGH=orange, CRITICAL=red), type icon, title, description, location/date/contact, slots-filled progress bar (filled/slots + %), organizer avatar. Sign Up button: disabled if already signed up (checks opp.signups for current uid) or if filled >= slots; on success toasts "You're signed up! 🙌"; on 409 toasts "Already signed up". Chat button → openChat(`volunteer-${id}`).
+  7. src/components/nx/modules/fundraising.tsx — Fundraising({ uid }). 6 categories (Medical 🏥, Education 📚, NGO 🤝, Community 🏘️, Emergency 🆘, Animals 🐾). Card shows image or gradient placeholder with HeartHandshake icon, Verified badge (BadgeCheck) if verified, category badge, title, description, beneficiary name + end date, progress bar (raised/goal with %, gradient fill primary→amber), organizer avatar, donation count. Donate button opens nested DonateForm Dialog with quick-amount chips (₹100/500/1000/2500), custom amount input, optional message, anonymous checkbox → POST /api/fundraising/[id]/donate. On success toasts "Donation received! Thank you 🙏".
+  8. src/components/nx/modules/property.tsx — Property({ uid }). 5 type filters (Sell 🏷️, Rent 🏠, PG 🛏️, Hostel 🏢, Commercial 🏬). Card shows image or gradient placeholder with Home/Building2 icon, color-coded type badge, propertyType secondary badge, price (SELL → inr(price); RENT/PG → inr(rent)/mo), deposit (for non-SELL), area, bedrooms/bathrooms (hidden for COMMERCIAL/PLOT), furnishing badge, address, owner avatar. Contact button → openChat(`property-${id}`). Create Dialog has all 14 fields with conditional price vs rent input based on type selection.
+- Ran `bun run lint` → exit code 0, no errors, no warnings across all 8 new files.
+- Verified all 8 deliverable files exist on disk with correct paths and non-trivial sizes (APIs ~1.1-2.1KB, modules ~12-14KB each).
+- Did NOT modify app-shell.tsx, modules-config.ts, or types.ts (per instructions — main agent will wire the modules into the sidebar/config). Did NOT add seed data. Did NOT run bun run dev / build.
+- Checked dev.log: dev server (Next.js 16.1.3 Turbopack) is healthy on :3000, ready in ~1s.
+
+Stage Summary:
+- ✅ 5 API routes created: /api/volunteer (GET+POST), /api/volunteer/[id]/signup (POST), /api/fundraising (GET+POST), /api/fundraising/[id]/donate (POST), /api/property (GET+POST).
+- ✅ 3 frontend modules created: Volunteer, Fundraising, Property — all client components, all following the marketplace pattern (search + category chips + create Dialog + responsive grid + skeleton + empty state + toast feedback).
+- ✅ Sign-up flow handles the @@unique constraint (409 → "Already signed up" toast) and auto-marks opportunities FILLED when slots fill.
+- ✅ Donate flow validates amount, auto-marks fundraisers GOAL_REACHED when goal met, supports anonymous donations.
+- ✅ Property module adapts card display by type (SELL shows sale price, RENT/PG shows monthly rent + deposit, COMMERCIAL hides BHK/bath counts).
+- ✅ All chat/contact buttons route to openChat(`{volunteer|fundraiser|property}-${id}`) as specified.
+- ✅ Lint clean (0 errors, 0 warnings). Ready for the main agent to wire the 3 modules into modules-config.ts + seed sample data.
+
+---
+Task ID: Balance-Build-3
+Agent: full-stack-developer
+Task: Build Society Management + Multinex Commerce modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md (latest state: Vercel deployed + admin shell separated + footers removed from panels; full-stack in stable production at neighborx.vercel.app). Read the marketplace module (src/components/nx/modules/marketplace.tsx) + its API route (src/app/api/marketplace/route.ts) + the services booking flow (src/components/nx/modules/services.tsx + src/app/api/services/[id]/book/route.ts) to internalize the project's exact patterns for `currentUser(req)`, `api<T>()` fetch wrapper, Dialog forms, dynamic-route `params: Promise<{ id: string }>`, color-coded badges, and `UserAvatar` usage.
+- Confirmed Prisma models Society / Visitor / SocietyNotice (lines 476-518) and CommerceProduct / CommerceOrder (lines 827-858) already exist in prisma/schema.prisma with the fields/types specified in the task. User.society defaults to "Royal Residency" (line 45). CommerceProduct includes seller relation; CommerceOrder includes buyer + product relations.
+- Confirmed types.ts already exports CommerceProduct (with seller: User) and CommerceOrder — imported these directly in commerce.tsx. Per task instructions, declared Society/SocietyNotice/Visitor interfaces INLINE in society.tsx (types.ts untouched).
+- Created 4 API routes:
+  1. src/app/api/society/route.ts — GET only. Resolves user from ?uid= (defaults arjun@nx.in), looks up society by `name: user.society` (or "Royal Residency"), includes notices ordered desc + admin (select id/name/email/avatar). Auto-creates a default society (48 units, area/city from user, user as admin) on first access so the resident landing always has data.
+  2. src/app/api/society/visitor/route.ts — GET (visitor passes where hostName === user.name OR visitors for the user's society, ordered desc) + POST (creates a visitor pass with status="APPROVED", ensuring a society row exists first by name lookup + create-if-missing).
+  3. src/app/api/commerce/route.ts — GET (filter by category + q; only inStock=true; include seller; orderBy createdAt desc) + POST (creates product with sellerId = current user, location derived from user.area + user.city, include seller in response).
+  4. src/app/api/commerce/[id]/order/route.ts — POST dynamic route using Next.js 16 `params: Promise<{ id: string }>` pattern. Validates product exists + inStock, computes total = qty * product.price, includes buyer + product in the response.
+- Created 2 frontend modules:
+  5. src/components/nx/modules/society.tsx — `Society({ uid })`. Tabs from @/components/ui/tabs (first usage in the codebase). Three tabs:
+     - Notices: color-coded cards per type (ANNOUNCEMENT=blue+Megaphone, MAINTENANCE=amber+Wrench, MEETING=violet+CalendarDays, EMERGENCY=red+AlertTriangle), each shows title + body + type badge + timeAgo. Scrollable (max-h-[70vh]).
+     - Visitor Pass: form (visitorName*, visitorPhone, hostName auto-filled from /api/me, hostFlat*, purpose) → POST → toast "Visitor pass issued! 🎫" + reload. Below: scrollable list (max-h-96) of recent passes with status badge color-coded + timeAgo + visitor phone (if present).
+     - Directory: brand-gradient hero card with Building2 avatar, society name/address, 4 stat cards (Total Units, Active Notices, Area, City), and society admin card (Shield icon + name/email) if present.
+  6. src/components/nx/modules/commerce.tsx — `Commerce({ uid })`. Category pills (All, 🛒 Grocery, 🍔 Food, 💊 Medicine, 📦 Parcels, 🔧 Rentals) + search box + "List Product" button. Grid of cards: image (or ShoppingBasket placeholder), category badge (color-coded), inStock indicator (emerald check or muted X), price (inr), title, description, storeName (Store icon), deliveryTime (Truck icon), location (MapPin icon), seller avatar + first name + timeAgo. "Order Now" button (disabled when out of stock) opens a Dialog with qty input + note textarea + live total = qty * price + deliveryTime reminder → POST /api/commerce/[id]/order → toast "Order placed! 🛍️". "List Product" Dialog with title*, description, price*, category Select, storeName, deliveryTime Select, imageUrl → POST /api/commerce → toast "Product listed! 🛒".
+- Both modules include loading skeletons, empty states with icon + helpful copy, and toast.error on every async failure path.
+- Verification: `bun run lint` → exit 0 (no errors, no warnings). `npx tsc --noEmit` → 0 errors in the 6 new files (pre-existing errors in unrelated files like examples/, skills/, prisma/seed-iam.ts, admin-shell.tsx, community-chat.tsx remain untouched).
+- Wrote work record to /home/z/my-project/agent-ctx/Balance-Build-3-full-stack-developer.md (first agent-ctx entry; created the directory).
+
+Stage Summary:
+- ✅ 4 API routes created: /api/society (GET), /api/society/visitor (GET+POST), /api/commerce (GET+POST), /api/commerce/[id]/order (POST). All follow the existing `currentUser(req)` + `db` pattern.
+- ✅ 2 frontend modules created: src/components/nx/modules/society.tsx (Tabs: Notices/Visitor Pass/Directory) and src/components/nx/modules/commerce.tsx (grid + list + order). Both are `"use client"`, accept `{ uid }`, use shadcn/ui components + UserAvatar + inr/timeAgo + toast.
+- ✅ Lint clean (exit 0), TypeScript clean for the 6 new files.
+- ✅ types.ts NOT modified (Society/SocietyNotice/Visitor declared inline in society.tsx as permitted). app-shell.tsx + modules-config.ts NOT modified — the `society` and `commerce` ModuleKeys already exist in the ModuleKey union (types.ts lines 22 + 26); main agent will wire them into modules-config.ts to replace the `coming-soon` placeholder.
+- ✅ No seed data written; no `bun run dev`/`build` run.
+- Files produced: src/app/api/society/route.ts, src/app/api/society/visitor/route.ts, src/app/api/commerce/route.ts, src/app/api/commerce/[id]/order/route.ts, src/components/nx/modules/society.tsx, src/components/nx/modules/commerce.tsx, /home/z/my-project/agent-ctx/Balance-Build-3-full-stack-developer.md.
