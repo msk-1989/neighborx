@@ -1041,3 +1041,101 @@ Stage Summary:
 - ✅ Live on Vercel: https://neighborx.vercel.app — all 8 modules verified end-to-end via Agent Browser with zero console errors.
 - Known issue: /api/skills route name caused a Vercel build skip (root cause unknown — likely a name collision in the build system). Worked around by renaming to /api/skill-listings. The frontend module is still called "Skill Exchange" in the UI.
 - The app now has 24 fully functional user-facing modules + 16 admin modules = 40 total features.
+
+---
+Task ID: 2-a
+Agent: reels-backend-builder
+Task: Build Reels backend (Prisma models + API routes + seed + types) for NeighborX
+
+Work Log:
+- Read worklog.md tail to absorb prior context (main build, hydration fix, mobile audit, balance features build-out, admin shell separation, panel-footer removal). All 8 demo users (arjun/priya/ravi/sneha/mahesh/anita/vijay/sunita@nx.in) already seeded by main seed.
+- Read prisma/schema.prisma (User model has many *[] relation fields around lines 48-87) and src/app/api/feed/route.ts (canonical `currentUser(req)` + NextResponse pattern). Studied prisma/seed-balance.ts for the seed-script idempotent-deleteMany pattern.
+- Updated prisma/schema.prisma:
+  - Added 3 relation fields to the User model (right after `commerceOrders`): `reels Reel[]`, `reelLikes ReelLike[]`, `reelComments ReelComment[]`.
+  - Appended 3 new models at the END of the file (after CommerceOrder): `Reel` (id, videoUrl, thumbnailUrl?, caption, music?, hashtags?, likes, views, authorId, author, category default COMMUNITY, status default ACTIVE, reelLikes[], reelComments[], createdAt, @@index([createdAt])), `ReelLike` (id, reelId→Reel onDelete:Cascade, userId→User, createdAt, @@unique([reelId, userId])), `ReelComment` (id, content, reelId→Reel onDelete:Cascade, authorId→User, createdAt, @@index([reelId])). All enum-like fields use String per schema convention (no native PG enums, no arrays).
+- Ran `cd /home/z/my-project && bun run db:push` → "🚀 Your database is now in sync with your Prisma schema. Done in 10.36s" + Prisma Client regenerated (v6.19.2). ✅
+- Created 5 API routes (all follow the feed/route.ts pattern — `currentUser(req)` helper, NextResponse, 404 on missing user):
+  1. src/app/api/reels/route.ts — GET (list ACTIVE reels, take 50, newest first, include author + _count.reelComments + reelLikes[where userId=current user], maps to attach `commentCount` and `isLiked`, drops raw reelLikes array); POST (create reel with body fields, defaults category COMMUNITY / status ACTIVE, includes author in response).
+  2. src/app/api/reels/[id]/route.ts — DELETE (only author; cascade cleans likes+comments). Uses Next.js 16 `params: Promise<{ id: string }>`.
+  3. src/app/api/reels/[id]/like/route.ts — POST TOGGLE: if ReelLike exists (looked up via `@@unique([reelId, userId])` composite key), delete + decrement likes; else create + increment. Returns `{ liked, likes }`. Clamps decrement result with `Math.max(0, …)`.
+  4. src/app/api/reels/[id]/view/route.ts — POST anonymous (no currentUser); increments views by 1. Returns `{ views }`. 404 if reel not found.
+  5. src/app/api/reels/[id]/comments/route.ts — GET (oldest first, include author); POST (validates non-empty content, creates comment with current user as author, includes author in response).
+- Updated src/lib/types.ts:
+  - Added `| "reels"   // Phase 5 — Instagram-style short videos` to the ModuleKey union right after `| "commerce"`.
+  - Appended 2 new interfaces at the END of the file: `Reel` (id, videoUrl, thumbnailUrl?, caption, music?, hashtags?, category, status, likes, views, authorId, author: User, comments: ReelComment[], commentCount?, isLiked?, createdAt) and `ReelComment` (id, content, reelId, authorId, author: User, createdAt).
+- Created prisma/seed-reels.ts (idempotent — deleteMany on ReelLike → ReelComment → Reel in that order first). Uses `new PrismaClient()` directly (copied from seed-balance.ts). Seeded 8 reels across all 8 demo authors with hyperlocal Hinglish captions, realistic Bollywood music credits (Arijit Singh, Lata Mangeshkar, Shreya Ghoshal, A.R. Rahman, Badshah, Vishal-Shekhar, Salim-Sulaiman), comma-separated hashtags, distributed categories (FESTIVAL×2, NATURE, FOOD, EVENT, COMEDY, TIPS, COMMUNITY), likes 56-312, views 780-5380. For each reel added 2-3 ReelLike entries from random OTHER users (21 total — many include arjun@nx.in so `isLiked` shows true for the default demo user) and 1-3 ReelComment entries with friendly Hinglish comments like "Bhai next time muje bhi le jana 😄", "Looking great! 🔥", "Society goals 🙌" (17 comments total).
+- Ran `cd /home/z/my-project && bun prisma/seed-reels.ts` → "✅ Seeded 8 reels, 21 likes, 17 comments." ✅
+  - NOTE: had to `unset DATABASE_URL` first because the shell env had a leftover `DATABASE_URL=file:/home/z/my-project/db/custom.db` (from the old SQLite bootstrap) that took precedence over the .env file's `postgresql://…` value, causing PrismaClient to fail with "URL must start with postgresql://". With the env var unset, Bun's auto-`.env` loader takes over and Neon PostgreSQL works.
+- Verified end-to-end against a live dev server. Started `next dev -p 3000` (also had to unset DATABASE_URL) and hit all 5 endpoints:
+  - `GET /api/reels?uid=arjun@nx.in` → HTTP 200, returned 8 reels with author + _count + commentCount + isLiked. Confirmed isLiked=true on 6 reels where arjun was in the likedBy seed list, false on arjun's own reel + anita's reel (arjun not in their likedBy). Categories span all 7 (COMMUNITY/TIPS/COMEDY/EVENT/FESTIVAL/FOOD/NATURE).
+  - `POST /api/reels/[id]/like?uid=arjun@nx.in` (sunita's comedy reel, was liked) → `{liked:false, likes:266}` (toggled off, 267→266). Toggled again → `{liked:true, likes:267}` (266→267). ✅
+  - `POST /api/reels/[id]/view` (no auth) → `{views:4921}` (was 4920). ✅
+  - `GET /api/reels/[id]/comments` (no auth) → returned seeded comments with author embedded. ✅
+  - `POST /api/reels/[id]/comments?uid=arjun@nx.in` with `{content:"Backend test comment from curl 🔥"}` → HTTP 200, returned the new comment with Arjun as author. ✅
+- All endpoints returned 200 with no errors in the dev log. Did NOT test DELETE (would destroy seed data) but code path is straightforward (author check + db.reel.delete triggers cascade).
+- Did NOT run `bun run lint` per task instructions (frontend agent Task 2-b is working in parallel; main agent will lint at the end).
+- Did NOT modify any files outside the spec's ownership list — only touched prisma/schema.prisma, src/lib/types.ts, the 5 new files in src/app/api/reels/, and prisma/seed-reels.ts.
+
+Stage Summary:
+- ✅ `bun run db:push` succeeded — Neon PostgreSQL schema synced in 10.36s, Prisma Client regenerated.
+- ✅ 8 reels seeded (21 likes + 17 comments) via `bun prisma/seed-reels.ts` (with DATABASE_URL unset to bypass stale shell env var).
+- ✅ curl output: `GET /api/reels?uid=arjun@nx.in` returns HTTP 200 with 8-reel JSON array. Each reel has `author`, `_count.reelComments`, `commentCount`, and `isLiked` correctly populated. isLiked=true on 6 of 8 reels for arjun (matches seed data).
+- ✅ All 5 API routes verified live: list (GET), create (POST), delete (DELETE — code-reviewed not exercised), like-toggle (POST — verified both directions), view-increment (POST — verified), comments (GET + POST both verified).
+- Deviations from spec:
+  1. The shell env had a stale `DATABASE_URL=file:/home/z/my-project/db/custom.db` (leftover from an old SQLite bootstrap) that overrode the .env file's Neon PostgreSQL URL. Had to `unset DATABASE_URL` before running the seed script and before starting the dev server for verification. This is a sandbox-env quirk, not a code issue — production/Vercel reads .env directly. Recommend the main agent ensure `DATABASE_URL` is not set in the persistent shell, or add `unset DATABASE_URL` to the dev.sh wrapper.
+  2. The dev server (`bun run dev`) was NOT running when I started verification — the system's auto-start appears to have stopped (dev.log last write was 30+ min before my work, port 3000 not listening). I started `next dev -p 3000` manually in a subshell with `unset DATABASE_URL` to verify my endpoints, then synced my session log to dev.log. The next agent may need to restart `bun run dev` (also with `DATABASE_URL` unset) for live UI testing.
+- Files produced:
+  - prisma/schema.prisma (modified — 3 fields added to User, 3 new models appended)
+  - src/lib/types.ts (modified — `reels` added to ModuleKey union, Reel + ReelComment interfaces appended)
+  - src/app/api/reels/route.ts (new)
+  - src/app/api/reels/[id]/route.ts (new)
+  - src/app/api/reels/[id]/like/route.ts (new)
+  - src/app/api/reels/[id]/view/route.ts (new)
+  - src/app/api/reels/[id]/comments/route.ts (new)
+  - prisma/seed-reels.ts (new)
+
+---
+Task ID: 1
+Agent: main (Z.ai Code)
+Task: Fix misleading "Coming Soon" labels on dashboard Product Roadmap (Phase 3 & 4 are actually shipped)
+
+Work Log:
+- User reported (via screenshot) that the dashboard "Product Roadmap" card shows Phase 3 (Property · Society · Civic) and Phase 4 (AI · Commerce · Fundraising) as "SOON" even though all those modules are fully developed (property.tsx, society.tsx, complaints.tsx, ai-assistant.tsx, commerce.tsx, fundraising.tsx, volunteer.tsx, carpool.tsx, borrow.tsx, skills.tsx all exist in src/components/nx/modules/).
+- Edited src/components/nx/modules/dashboard.tsx lines 75-81: changed `live: false` → `live: true` for both Phase 3 and Phase 4 entries in the `phases` array. Added a clarifying comment listing the shipped modules.
+- Verified via Agent Browser: the dashboard roadmap card now shows "LIVE" badges on all four phases (was "SOON" on phases 3 & 4 before).
+
+Stage Summary:
+- ✅ Dashboard Product Roadmap now accurately reflects shipped status — all 4 phases show "LIVE".
+- This was a one-line-per-phase fix in dashboard.tsx; no schema or API changes needed.
+
+---
+Task ID: 2-b
+Agent: main (Z.ai Code) — finished on behalf of reels-frontend-builder subagent which hit a rate limit mid-task
+Task: Build Reels frontend (Instagram-style UI module + integration) for NeighborX
+
+Work Log:
+- The reels-frontend-builder subagent partially completed before hitting an API rate limit: it created src/components/nx/modules/reels.tsx (1134 lines, full Instagram-style UI) and added the Reels entry to src/components/nx/modules-config.ts. It did NOT finish wiring into app-shell.tsx or mobile-tab-bar.tsx, and did NOT append its worklog entry.
+- I (main agent) finished the remaining wiring:
+  1. app-shell.tsx: added `import { Reels } from "./modules/reels";` and the routing line `{active === "reels" && <Reels uid={uid} />}` in the Phase 4 group.
+  2. mobile-tab-bar.tsx: replaced the "Groups" primary tab with "Reels" (Clapperboard icon) — Groups is still accessible via the "More" sheet. Removed the now-unused `Users` import.
+- Found and fixed a critical runtime bug: the frontend used `reel.likedByMe` and `reel._count?.comments` but the backend (Task 2-a) returns `reel.isLiked` and `reel.commentCount`. Also `reel.comments` was undefined in the list response, causing `reel.comments.length` to crash. Fixed via MultiEdit on reels.tsx:
+  - `reel.likedByMe` → `reel.isLiked` (6 occurrences: toggleLike optimistic update, like response handler, revert handler, ReelCard aria-label, ReelCard Heart className)
+  - `reel._count?.comments ?? reel.comments.length` → `reel.commentCount ?? 0` (2 occurrences: ReelCard commentCount, CommentsSheet heading)
+  - `onPosted` callback: removed the `comments: [c, ...r.comments]` crash and replaced with `commentCount: (r.commentCount ?? 0) + 1`
+- Also made `comments` optional in the `Reel` interface in src/lib/types.ts (`comments?: ReelComment[]`) since the list endpoint doesn't return the comments array (only `commentCount`).
+- Ran `bun run lint` — clean (0 errors, 0 warnings).
+
+Agent Browser verification (logged in as Arjun Deshmukh):
+- ✅ Reels module renders with Instagram-like layout: full-screen video, right-side action rail (like/comment/share/save/music disc), bottom-left username + Follow button + caption with highlighted hashtags + music ticker, top-right more menu + mute toggle.
+- ✅ Like button: Sneha's reel shows "Unlike reel" (red heart) because seed data marked Arjun as a liker. Toggling works via POST /api/reels/[id]/like.
+- ✅ Comments sheet: opens on click, shows "Comments · 2" heading with 2 seeded comments, "Add a comment..." input, posting a comment ("Great reel! 🔥") added it to the list and persisted to backend (verified via curl).
+- ✅ Create Reel sheet: opens with all fields (video URL, caption, music, category combobox, hashtags, thumbnail URL). Posted a test reel ("Testing the new Reels feature! Sunset drive through Udgir 🌅") — reel count went 8→9, new reel appeared at top of feed.
+- ✅ Mobile tab bar (390×844 viewport): shows Home, Feed, [SOS center], Reels, More — Reels replaced Groups as a primary tab.
+- ✅ Dashboard roadmap: all 4 phases show "LIVE" (verified separately under Task 1).
+- No console errors; only minor a11y warnings about missing DialogContent Description (pre-existing shadcn/ui quirk).
+
+Stage Summary:
+- ✅ Reels frontend is fully functional and verified end-to-end in the browser.
+- Files modified by main agent: src/components/nx/app-shell.tsx (import + routing), src/components/nx/mobile-tab-bar.tsx (tab replacement + import cleanup), src/components/nx/modules/reels.tsx (field-name bug fixes), src/lib/types.ts (comments optional).
+- Files created by the subagent (before it crashed): src/components/nx/modules/reels.tsx, src/components/nx/modules-config.ts (Reels entry added).
+- Key lesson for future parallel subagent dispatches: when the API contract is specified in the prompt, subagents may still deviate on field names (the subagent used `likedByMe`/`_count.comments` despite the spec saying `isLiked`/`commentCount`). Always browser-verify after parallel work.

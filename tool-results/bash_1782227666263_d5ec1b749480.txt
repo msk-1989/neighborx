@@ -1,0 +1,300 @@
+- Committed: "fix(db): permanent postgresql provider — fixes runtime Prisma error on Vercel" (commit e7f40dc, 5 files changed, 21 insertions, 67 deletions).
+- Pushed to GitHub via PAT credential helper (8ebffb9..e7f40dc).
+- Redeployed to Vercel: `vercel deploy --prod` → build 18s, deploy 40s, aliased https://neighborx.vercel.app.
+- Live verification:
+  - curl https://neighborx.vercel.app/ → HTTP 200 in 1.29s.
+  - curl /api/me → HTTP 200, full Arjun Deshmukh user profile from Neon (id, name, email, phone, avatar, bio, role, verification flags...). THIS WAS THE 500 ERROR ENDPOINT — now fixed.
+  - curl /api/chat?room=general → HTTP 200, persisted chat messages with sender objects.
+  - curl /api/feed → HTTP 200, community posts.
+  - Agent Browser on https://neighborx.vercel.app/: title correct, landing page full render, "I already have an account" → auth screen, 6 demo users loaded from Neon DB, clicked Arjun → email auto-filled arjun@nx.in, ZERO console errors.
+
+Stage Summary:
+- ✅ FIXED: The runtime Prisma "URL must start with file:" error is resolved. Root cause was the postinstall generate racing with the prebuild swap; fixed by committing provider="postgresql" permanently.
+- ✅ LIVE on Vercel: https://neighborx.vercel.app — all DB-backed APIs returning 200 with real Neon data.
+- ✅ Local dev also works against Neon (after `unset DATABASE_URL` in the sandbox shell to defeat the stale exported SQLite URL).
+- Architecture now simplified: single provider (postgresql), single DB (Neon), single generated client — no swap scripts, no provider env var, no race conditions.
+- Reminder: user should still rotate the GitHub PAT, Vercel token, and Neon DB password (shared in plaintext earlier).
+
+---
+Task ID: Delete-Broken-Project
+Agent: main (Z.ai Code)
+Task: User reported the SAME sqlite Prisma error 3 times — find the real source (not cache)
+
+Work Log:
+- Previous turn dismissed the error as "browser cache" twice — that was wrong. Took the report seriously this time.
+- Checked local schema: provider = "postgresql" (correct). Checked git: e7f40dc pushed to GitHub (correct). Checked neighborx.vercel.app: all APIs return 200 (correct).
+- Hypothesized a SECOND deployment. Listed ALL Vercel projects in the account via API: found "my-project" (prj_bGGGRFKpZdLHbOo7yps2489eZ7XV) still alive at alias my-project-pied-six.vercel.app — this was the FIRST deploy that accidentally went to the wrong project due to a stale .vercel/project.json link.
+- Tested my-project-pied-six.vercel.app/api/me → HTTP 500 (the broken sqlite-swap deployment from before the fix). That was the source of the user's error — they were visiting the wrong URL.
+- Deleted the "my-project" Vercel project entirely via DELETE /v9/projects/my-project → HTTP 204. Confirmed deletion (API now 404).
+- Verified: my-project-pied-six.vercel.app/* → 404 (dead). neighborx.vercel.app/* → all 200 (working). 
+
+Stage Summary:
+- ROOT CAUSE of the recurring error: two Vercel projects existed. The first deploy (broken, sqlite-swap approach) went to "my-project" at my-project-pied-six.vercel.app. The fix deploy went to "neighborx" at neighborx.vercel.app. The user was visiting the old broken URL.
+- FIX: deleted the "my-project" project. Now only neighborx.vercel.app exists and it works.
+- The correct URL the user must use: https://neighborx.vercel.app
+- Lesson: when a user reports the same error repeatedly, do NOT assume cache — investigate for a second live deployment / wrong URL.
+
+---
+Task ID: Admin-Shell-Separation
+Agent: main (Z.ai Code)
+Task: Separate admin panel into its own shell with role-scoped modules + replace favicon with NeighborX logo (user: "why u have added admin in user admin and admin features will be separate panel and all panels will be separate like super admin etc" + "u can go with best option and also pls change the fevicon as well use same logo as fevicon")
+
+Work Log:
+- Analyzed current architecture: AdminPanel (2150 lines, 16 modules) was embedded as a tab in the user sidebar via modules-config.ts. All admin levels shared the same monolithic panel.
+- Chose Option A: one unified AdminShell with role-scoped module visibility (Super Admin sees all 16, Society Admin sees only society modules, etc.). Standard approach used by GitHub/Stripe/Vercel.
+- Favicon: Created src/app/icon.svg — the NeighborX house logo (white house SVG path) on the brand emerald→amber gradient (#0d9668 → #d97706), 32x32 rounded square. Removed the external Z.ai logo URL from layout.tsx metadata.
+- Store: Added adminView (boolean) + setAdminView to the NX store. Not persisted — always boots into the user app.
+- modules-config.ts: Removed the "admin" module from MODULES array and "admin" from GROUP_ORDER. The admin panel is no longer a sidebar tab.
+- admin-panel.tsx refactored:
+  - Exported ADMIN_TABS (16 tab definitions) and AdminTabKey type.
+  - Replaced old AdminPanel (with internal Tabs sidebar) with AdminPanelContent({ activeTab, uid }) — a pure content renderer. The AdminShell provides the sidebar.
+  - Removed unused Tabs/TabsList/TabsTrigger/TabsContent imports.
+- admin-modules.ts (new): Maps each admin role to its allowed admin tabs:
+  - SUPER_ADMIN (10): all 16 modules
+  - COMPLIANCE_ADMIN (9): overview, compliance, community, users
+  - REVENUE_ADMIN (8): overview, finance, businesses
+  - OPERATIONS_ADMIN (7): overview, trust, support, society, users
+  - SUPPORT_ADMIN (6): overview, support, community
+  - ORG_ADMIN (5): overview
+  - BUSINESS_ADMIN (4): overview, businesses, services
+  - CITY_MODERATOR (3): overview, community, marketplace, jobs
+  - AREA_MODERATOR (2): overview, community, marketplace
+  - SOCIETY_ADMIN (1): overview, society, community, users
+  - getVisibleAdminTabs(roles) returns the union of allowed tabs.
+  - getAdminRoleLabel(roles) returns a human-readable role label.
+- admin-shell.tsx (new): The separate Admin Console chrome:
+  - Header: branded dark gradient (fuchsia→slate→emerald) with Crown icon, "Admin Console" title, role badge (shows admin level for super admins), "Back to App" button, theme toggle, user avatar, logout.
+  - Sidebar: role-scoped admin modules (fuchsia accent for active item). Shows module count.
+  - Mobile: Sheet drawer with the same sidebar.
+  - Main content: renders AdminPanelContent for the active tab.
+  - AdminSidebar extracted as a separate component (react-hooks/static-components lint rule).
+- app-shell.tsx: Added AdminGate component — if adminView && iam.isAdmin && !iam.loading, renders AdminShell instead of the user app. Removed the old {active === "admin" && <AdminPanel>} branch.
+- header.tsx: Added "Admin Console" button (fuchsia gradient, Crown icon) visible only to admin users. Clicking sets adminView=true → AdminShell renders.
+- sidebar.tsx: Cleaned up dead admin-group references (removed canViewAdmin check, admin RBAC badge, admin group styling). Admin role badges still show in the neighborhood info section.
+- Lint: clean (0 errors, 0 warnings).
+- Committed: "feat(admin): separate Admin Console shell + role-scoped modules + favicon" (commit cecb1a7, 10 files changed, 423 insertions, 86 deletions).
+- Pushed to GitHub (e7f40dc..cecb1a7).
+- Deployed to Vercel: build 20s, deploy 45s, aliased https://neighborx.vercel.app.
+- Live verification via Agent Browser:
+  1. Favicon: /icon.svg returns HTTP 200 (the NeighborX house logo on brand gradient).
+  2. Landing page renders, title correct.
+  3. Logged in as Arjun (SUPER_ADMIN) via OTP flow (got demoOtp 123979 from /api/auth/send-otp, entered it, clicked Login).
+  4. User app loaded: header shows "Admin Console" button (fuchsia, Crown icon). Sidebar shows ONLY user modules (Home, Home Feed, Groups, Events, Chat, etc.) — NO admin tab.
+  5. Clicked "Admin Console" → AdminShell rendered: separate dark header with "Admin Console" title, "Super Admin L10" badge, "Back to App" button. Sidebar shows all 16 admin modules (Overview through Settings). Overview section loaded with content.
+  6. Clicked "Users" in admin sidebar → Users section loaded (content changed).
+  7. Clicked "Back to App" → returned to user app with normal header (Royal Residency, scope buttons, Admin Console button).
+  8. Zero console errors throughout.
+  9. URL stayed at / throughout (view switch, no route change).
+
+Stage Summary:
+- ✅ Admin is now a SEPARATE console (AdminShell) — not a tab in the user sidebar.
+- ✅ Each admin role sees only their scoped modules (Super Admin = all 16, Society Admin = 4, etc.).
+- ✅ "Admin Console" button in user header (admins only) → AdminShell. "Back to App" → user view.
+- ✅ Favicon replaced with the NeighborX house logo on brand gradient.
+- ✅ Live on Vercel: https://neighborx.vercel.app — fully verified end-to-end.
+
+---
+Task ID: Remove-Panel-Footers
+Agent: main (Z.ai Code)
+Task: User said "i think we dont need footer in panels" — remove the marketing footer from the in-app panels (user app + admin console), keep it only on the public landing page.
+
+Work Log:
+- Read worklog.md to confirm prior state: Admin-Shell-Separation task already done & deployed (admin is a separate shell, favicon already replaced). This was a NEW, smaller request on top.
+- Analyzed screenshot uploaded by user (pasted_image_1782223122989.png) via VLM: showed the logged-in user app with sidebar (Events, Community Chat, Lost & Found, SAFETY) + category cards + a marketing footer at the bottom (NeighborX logo, platform features, Why NeighborX, contact, legal links). Confirmed the footer the user wants gone.
+- Grepped for footer usage across src/components/nx/: found 4 locations —
+  1. landing-page.tsx (line 1026): `<Footer />` — the public marketing site. KEEP.
+  2. app-shell.tsx (lines 237-240): `<Footer />` wrapped in `hidden lg:block` — the logged-in user app panel. REMOVE.
+  3. admin-shell.tsx: NO footer (already clean from the Admin-Shell-Separation task). No change.
+  4. auth-screen.tsx (line 513): a minimal one-line `<footer>© 2026 NeighborX...</footer>` — gateway screen, not a panel. KEEP.
+- Edited app-shell.tsx (3 changes via MultiEdit):
+  1. Removed `import { Footer } from "./footer";` (now unused).
+  2. Updated the stale sidebar comment that referenced "footer top" → now references "page bottom" (no more footer to clamp against).
+  3. Replaced the `<div className="hidden lg:block"><Footer /></div>` block with a comment explaining panels are full-height app-like experiences (no footer); `<MobileTabBar />` stays for mobile.
+- Updated footer.tsx docstring: was "only rendered on lg+ screens (see app-shell.tsx)" → now "the marketing footer for the public landing page only. NOT rendered inside the app panel or admin console."
+- Lint: `bun run lint` → clean (0 errors, 0 warnings).
+- Local dev server: restarted with `unset DATABASE_URL DIRECT_DATABASE_URL` (sandbox shell exports stale SQLite URL that overrides .env — documented issue). Server compiled cleanly (HTTP 200 on /). Note: sandbox memory pressure kept killing the dev server under agent-browser load (documented issue), so full interactive verification was done on the stable Vercel live site instead.
+- Committed: "fix(ui): remove footer from app & admin panels (keep on landing page)" (commit 7a9e723, 2 files changed, 8 insertions, 9 deletions).
+- Pushed to GitHub via PAT credential helper (cecb1a7..7a9e723).
+- Deployed to Vercel: `vercel deploy --prod` → build 18s, deploy 40s, aliased https://neighborx.vercel.app.
+- Live verification via Agent Browser on https://neighborx.vercel.app:
+  1. Landing page (logged out): `document.querySelector('footer')` → "FOOTER PRESENT: NeighborX | Hyperlocal Community | The Digital Operating System..." ✅ (footer kept on marketing site).
+  2. Clicked "I already have an account" → auth screen → clicked "Arjun Deshmukh 👑 SUPER_ADMIN" → email auto-filled arjun@nx.in → clicked "Send login OTP" → demo OTP 873331 shown in UI → filled it → clicked "Login" → logged in.
+  3. App panel (logged in): `document.querySelector('footer')` → "NO FOOTER (correct!)" ✅. Sidebar + header + dashboard content render normally; no marketing footer at the bottom.
+  4. Clicked "Admin Console" button → AdminShell rendered → `document.querySelector('footer')` → "NO FOOTER (correct!)" ✅. Admin header ("Admin Console", Super Admin L10 badge, Back to App) present.
+  5. Clicked "Back to App" → returned to user app → footer still absent ✅.
+  6. Console errors: none. Console messages: none.
+  7. VLM screenshot analysis confirmed: app panel bottom shows dashboard metric cards with no footer; admin console bottom shows Recent Posts / New Users / Abuse Reports cards with no footer.
+- Saved verification screenshots: app-panel-no-footer.png, admin-panel-no-footer.png.
+
+Stage Summary:
+- ✅ Footer removed from the user app panel (app-shell.tsx) — panels are now full-height app-like experiences.
+- ✅ Admin console confirmed footer-free (was already clean).
+- ✅ Public landing page keeps its marketing footer (unchanged).
+- ✅ Auth screen keeps its minimal one-line copyright footer (gateway screen, not a panel).
+- ✅ Live on Vercel: https://neighborx.vercel.app — fully verified end-to-end (landing footer present, app panel no footer, admin console no footer, zero console errors).
+- Note: when in-app content is short (e.g. the dashboard's metric cards on a tall desktop viewport), there is now empty background space below the content instead of a footer capping it. This is standard app-shell behavior (Stripe, Vercel, GitHub dashboards all do this) and is the intended result of removing the footer per the user's request.
+
+---
+Task ID: Balance-Build-1
+Agent: full-stack-developer
+Task: Build Borrow & Lend, Skill Exchange, Carpool modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md (bottom) to confirm prior state: codebase is live on Vercel (neighborx.vercel.app), admin shell separated, footers removed from panels. Prisma provider permanently postgresql against Neon. Models BorrowItem, SkillListing, CarpoolRide already exist in prisma/schema.prisma (lines 661-728) with the exact fields specified. TypeScript interfaces already exported from src/lib/types.ts (lines 373-423): BorrowItem {owner: User}, SkillListing {teacher: User}, CarpoolRide {driver: User}.
+- Studied the existing marketplace module as the reference pattern: src/app/api/marketplace/route.ts (currentUser helper reads ?uid= param defaulting to arjun@nx.in, GET filters by category/q with status AVAILABLE, POST creates with user.id) and src/components/nx/modules/marketplace.tsx (search Input + category chip row + responsive grid of Cards with image/price/avatar/timeAgo/Chat button, loading skeleton via animate-pulse, empty state Card, Create Dialog with form state, toast.success/error, openChat(`listing-${id}`)).
+- Confirmed shared utilities: `api<T>(path, init?)` from @/lib/api, `inr(n)` and `timeAgo(iso)` from @/lib/types, `UserAvatar` from ../user-bits (props: user, size), `useNX((s) => s.openChat)` from @/lib/store, `cn` from @/lib/utils, `toast` from sonner.
+
+- Created src/app/api/borrow/route.ts:
+  - currentUser(req) helper identical to marketplace pattern.
+  - GET: filters by `category` (cat !== "ALL"), `type` (LEND/BORROW, !== "ALL"), `q` (OR on title+description contains), and `{ status: "AVAILABLE" }`. Includes owner. Ordered by createdAt desc.
+  - POST: creates BorrowItem with title/description/category/type/condition/imageUrl/dailyRate/deposit/duration/location/ownerId. Defaults: category OTHER, type LEND, condition Good, duration "7 days", location falls back to `${user.area}, ${user.city}`. Numeric coercion via Number()||0. Includes owner in response.
+
+- Created src/app/api/skills/route.ts:
+  - GET: filters by `category`, `mode` (OFFLINE/ONLINE/BOTH), `q` (OR title+description), `{ status: "ACTIVE" }`. Includes teacher. Ordered createdAt desc.
+  - POST: creates SkillListing with title/description/category/mode/level/rate/location/availability/teacherId. Defaults: category OTHER, mode BOTH, level BEGINNER, availability "Weekends", location falls back to user area. Includes teacher.
+
+- Created src/app/api/carpool/route.ts:
+  - GET: filters by `type` (OFFER/REQUEST, !== "ALL"), `q` (OR on fromLocation+toLocation+notes contains), `{ status: "OPEN" }`. Includes driver. Ordered createdAt desc.
+  - POST: creates CarpoolRide with type/fromLocation/toLocation/date/time/seats/seatsFilled(=0)/recurring/notes/contribution/status(OPEN)/driverId. Defaults: type OFFER, seats 1, recurring "One-time". Includes driver.
+
+- Created src/components/nx/modules/borrow.tsx — `export function Borrow({ uid })`:
+  - Top row: search Input (flex-1) + Type Select (All/Lending/Want to borrow) + Post Button (Dialog trigger).
+  - Category chip row: ALL, 📚 Books, 🔧 Tools, 🏋️ Equipment, 🩺 Medical, ⚽ Sports, 🔌 Appliances, 📦 Other.
+  - Card grid (sm:2, lg:3 cols): each card has 4:3 image (HandHelping fallback icon), top-left type badge (emerald LEND / amber BORROW), top-right condition badge, category outline badge, title (line-clamp-1), description (line-clamp-2), rate row (₹/day or Free, deposit with ShieldCheck, duration with Clock), location with MapPin, footer with UserAvatar + first name + timeAgo + Chat button calling openChat(`borrow-${id}`).
+  - Loading skeleton: 6 animate-pulse Cards.
+  - Empty state: "No items found. Be the first to share something with your neighbors!"
+  - BorrowDialog form: title*, description, type Select (LEND/BORROW), category Select, condition Select (New/Good/Fair), duration Input, dailyRate + deposit number Inputs, imageUrl Input, location Input. Validates title. toast.success on create ("Item listed for lending!" / "Borrow request posted!"), toast.error on failure.
+
+- Created src/components/nx/modules/skills.tsx — `export function Skills({ uid })`:
+  - Top row: search Input + Mode Select (All/In-person/Online/Both) + Teach Button (Dialog trigger).
+  - Category chip row: ALL, 🗣️ Language, 📚 Academic, 💻 Computer, 🎵 Music, 🎨 Art, 💼 Professional, 📦 Other.
+  - Card grid: each card has a gradient header (emerald→amber→rose tint) with a GraduationCap icon tile, top-right mode badge with ModeIcon (Wifi/Users/Video), top-left level pill (emerald BEGINNER / amber INTERMEDIATE / rose ADVANCED via levelColor helper), category outline badge, title, description (line-clamp-2), rate row (₹/hr or "Free / Swap" + availability with CalendarClock), location with MapPin, footer with teacher UserAvatar + name + timeAgo + Chat button calling openChat(`skills-${id}`).
+  - Loading skeleton, empty state ("No skill listings found. Be the first to teach or offer a skill swap!").
+  - SkillDialog form: title*, description, category Select, mode Select (BOTH/OFFLINE/ONLINE), level Select (BEGINNER/INTERMEDIATE/ADVANCED), rate Input (₹/hr), availability Input, location Input. Validates title. toast.success ("Skill listing posted! 🎓"), toast.error on failure.
+
+- Created src/components/nx/modules/carpool.tsx — `export function Carpool({ uid })`:
+  - Top row: search Input + Post ride Button (Dialog trigger). No separate category Select — type filter is the chip row.
+  - Type chip row: All rides / 🚗 Offering / 🙏 Need a ride.
+  - Card grid: each card has a gradient header (sky→emerald→amber tint) with a Car icon tile (or Navigation icon for REQUEST type), top-left type badge (emerald OFFER / amber REQUEST), top-right FULL badge when seatsLeft===0. Route row: fromLocation → toLocation with ArrowRight. Info row: date (Calendar), time (Clock), seats-left (Users, emerald unless 0 then rose) — only for OFFER, recurring (Repeat) if not One-time. Contribution row: ₹ amount or "Free" + "fuel share" label. Notes (line-clamp-2) if present. Footer with driver UserAvatar + name + timeAgo + Chat button calling openChat(`carpool-${id}`).
+  - Loading skeleton, empty state ("No rides found. Be the first to offer or request a ride!").
+  - CarpoolDialog form: type Select (OFFER/REQUEST), fromLocation*, toLocation*, date* (date input), time* (time input), recurring Select (One-time/Mon-Fri/Daily/Weekends), seats Input (only shown for OFFER), contribution Input (shown for REQUEST inline + separate row for OFFER), notes Textarea. Validates from/to/date/time. toast.success ("Ride offered!" / "Ride request posted!"), toast.error on failure.
+
+- Removed an unused MapPin import from carpool.tsx (caught during self-review before lint).
+- Ran `bun run lint` → exit 0, zero errors, zero warnings across all 6 new files. Verified dev.log shows no compile errors from the new routes.
+
+Stage Summary:
+- 3 API routes created (GET+POST each): src/app/api/borrow/route.ts, src/app/api/skills/route.ts, src/app/api/carpool/route.ts. All follow the marketplace pattern exactly (currentUser helper, query-param filters, status gate, include relation, createdAt desc ordering).
+- 3 client component modules created: src/components/nx/modules/{borrow,skills,carpool}.tsx — each exports a named function ({Borrow, Skills, Carpool}) taking `{ uid }`. Each has search + filters + chips + responsive card grid + loading skeleton + empty state + Create Dialog + toast feedback + Chat button wired to openChat with module-prefixed room id.
+- All 6 files lint clean (0 errors, 0 warnings). No existing files modified (app-shell.tsx, modules-config.ts, types.ts untouched per instructions — main agent will wire the modules into the shell/config).
+- No seed data written (per instructions — main agent handles seeding).
+- No tests written (per instructions).
+- All Prisma field types respected: Int fields use Number(body.x)||0 coercion, String? fields use body.x||null, String fields use body.x||"" or sensible defaults, location falls back to `${user.area}, ${user.city}` when not provided.
+
+---
+Task ID: Balance-Build-2
+Agent: full-stack-developer
+Task: Build Volunteer Network, Fundraising, Property modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md to confirm prior state (Admin-Shell-Separation + Remove-Panel-Footers tasks done & deployed; admin is a separate shell, panels are footer-free).
+- Studied existing marketplace module + API route as the canonical pattern to follow; confirmed UserAvatar export from ../user-bits, api() helper from @/lib/api, useNX((s) => s.openChat), inr()/timeAgo() from @/lib/types, dynamic-route signature { params: Promise<{ id: string }> } in Next.js 16 (matched events/[id]/rsvp + jobs/[id]/apply).
+- Confirmed the 5 Prisma models already exist in prisma/schema.prisma (VolunteerOpportunity, VolunteerSignup with @@unique([opportunityId, userId]), Fundraiser, FundraiserDonation, PropertyListing) and that types.ts already exports the matching TS interfaces.
+- Created directory tree with mkdir -p for the two dynamic-route API folders ([id]/signup, [id]/donate) + the three top-level API folders (volunteer, fundraising, property).
+- Built 5 API routes:
+  1. src/app/api/volunteer/route.ts — GET filters by type/urgency/q (only OPEN), includes organizer + signups.user, orders by urgency desc then createdAt desc. POST creates with uid, defaults contactInfo to user.phone/email, defaults location to user.area/city.
+  2. src/app/api/volunteer/[id]/signup/route.ts — POST creates VolunteerSignup (unique constraint → 409 on duplicate), increments opportunity.filled, sets status FILLED when filled >= slots.
+  3. src/app/api/fundraising/route.ts — GET filters by category/q (only ACTIVE), includes organizer + donations.donor, orders by verified desc then createdAt desc. POST creates with uid.
+  4. src/app/api/fundraising/[id]/donate/route.ts — POST creates FundraiserDonation (validates amount > 0), increments fundraiser.raised, sets status GOAL_REACHED when raised >= goal.
+  5. src/app/api/property/route.ts — GET filters by type/propertyType/q (only AVAILABLE), q matches title OR address OR location, includes owner, orders by createdAt desc. POST creates with uid, all numeric fields coerced via Number().
+- Built 3 frontend client modules, each mirroring the marketplace pattern (search input + category chips, create Dialog, responsive sm:grid-cols-2 lg:grid-cols-3, animate-pulse skeleton cards, empty-state Card, toast.success/error, UserAvatar + timeAgo in card footer):
+  6. src/components/nx/modules/volunteer.tsx — Volunteer({ uid }). 7 categories (Blood Donor 🩸, Disaster 🆘, Elderly 👴, Teaching 📚, Environment 🌱, Animals 🐾, Other 📦) each with a matching lucide icon (Droplet, Siren, Heart, BookOpen, Leaf, PawPrint, Package). Card shows color-coded urgency badge (LOW=slate, MEDIUM=amber, HIGH=orange, CRITICAL=red), type icon, title, description, location/date/contact, slots-filled progress bar (filled/slots + %), organizer avatar. Sign Up button: disabled if already signed up (checks opp.signups for current uid) or if filled >= slots; on success toasts "You're signed up! 🙌"; on 409 toasts "Already signed up". Chat button → openChat(`volunteer-${id}`).
+  7. src/components/nx/modules/fundraising.tsx — Fundraising({ uid }). 6 categories (Medical 🏥, Education 📚, NGO 🤝, Community 🏘️, Emergency 🆘, Animals 🐾). Card shows image or gradient placeholder with HeartHandshake icon, Verified badge (BadgeCheck) if verified, category badge, title, description, beneficiary name + end date, progress bar (raised/goal with %, gradient fill primary→amber), organizer avatar, donation count. Donate button opens nested DonateForm Dialog with quick-amount chips (₹100/500/1000/2500), custom amount input, optional message, anonymous checkbox → POST /api/fundraising/[id]/donate. On success toasts "Donation received! Thank you 🙏".
+  8. src/components/nx/modules/property.tsx — Property({ uid }). 5 type filters (Sell 🏷️, Rent 🏠, PG 🛏️, Hostel 🏢, Commercial 🏬). Card shows image or gradient placeholder with Home/Building2 icon, color-coded type badge, propertyType secondary badge, price (SELL → inr(price); RENT/PG → inr(rent)/mo), deposit (for non-SELL), area, bedrooms/bathrooms (hidden for COMMERCIAL/PLOT), furnishing badge, address, owner avatar. Contact button → openChat(`property-${id}`). Create Dialog has all 14 fields with conditional price vs rent input based on type selection.
+- Ran `bun run lint` → exit code 0, no errors, no warnings across all 8 new files.
+- Verified all 8 deliverable files exist on disk with correct paths and non-trivial sizes (APIs ~1.1-2.1KB, modules ~12-14KB each).
+- Did NOT modify app-shell.tsx, modules-config.ts, or types.ts (per instructions — main agent will wire the modules into the sidebar/config). Did NOT add seed data. Did NOT run bun run dev / build.
+- Checked dev.log: dev server (Next.js 16.1.3 Turbopack) is healthy on :3000, ready in ~1s.
+
+Stage Summary:
+- ✅ 5 API routes created: /api/volunteer (GET+POST), /api/volunteer/[id]/signup (POST), /api/fundraising (GET+POST), /api/fundraising/[id]/donate (POST), /api/property (GET+POST).
+- ✅ 3 frontend modules created: Volunteer, Fundraising, Property — all client components, all following the marketplace pattern (search + category chips + create Dialog + responsive grid + skeleton + empty state + toast feedback).
+- ✅ Sign-up flow handles the @@unique constraint (409 → "Already signed up" toast) and auto-marks opportunities FILLED when slots fill.
+- ✅ Donate flow validates amount, auto-marks fundraisers GOAL_REACHED when goal met, supports anonymous donations.
+- ✅ Property module adapts card display by type (SELL shows sale price, RENT/PG shows monthly rent + deposit, COMMERCIAL hides BHK/bath counts).
+- ✅ All chat/contact buttons route to openChat(`{volunteer|fundraiser|property}-${id}`) as specified.
+- ✅ Lint clean (0 errors, 0 warnings). Ready for the main agent to wire the 3 modules into modules-config.ts + seed sample data.
+
+---
+Task ID: Balance-Build-3
+Agent: full-stack-developer
+Task: Build Society Management + Multinex Commerce modules (APIs + frontend)
+
+Work Log:
+- Read worklog.md (latest state: Vercel deployed + admin shell separated + footers removed from panels; full-stack in stable production at neighborx.vercel.app). Read the marketplace module (src/components/nx/modules/marketplace.tsx) + its API route (src/app/api/marketplace/route.ts) + the services booking flow (src/components/nx/modules/services.tsx + src/app/api/services/[id]/book/route.ts) to internalize the project's exact patterns for `currentUser(req)`, `api<T>()` fetch wrapper, Dialog forms, dynamic-route `params: Promise<{ id: string }>`, color-coded badges, and `UserAvatar` usage.
+- Confirmed Prisma models Society / Visitor / SocietyNotice (lines 476-518) and CommerceProduct / CommerceOrder (lines 827-858) already exist in prisma/schema.prisma with the fields/types specified in the task. User.society defaults to "Royal Residency" (line 45). CommerceProduct includes seller relation; CommerceOrder includes buyer + product relations.
+- Confirmed types.ts already exports CommerceProduct (with seller: User) and CommerceOrder — imported these directly in commerce.tsx. Per task instructions, declared Society/SocietyNotice/Visitor interfaces INLINE in society.tsx (types.ts untouched).
+- Created 4 API routes:
+  1. src/app/api/society/route.ts — GET only. Resolves user from ?uid= (defaults arjun@nx.in), looks up society by `name: user.society` (or "Royal Residency"), includes notices ordered desc + admin (select id/name/email/avatar). Auto-creates a default society (48 units, area/city from user, user as admin) on first access so the resident landing always has data.
+  2. src/app/api/society/visitor/route.ts — GET (visitor passes where hostName === user.name OR visitors for the user's society, ordered desc) + POST (creates a visitor pass with status="APPROVED", ensuring a society row exists first by name lookup + create-if-missing).
+  3. src/app/api/commerce/route.ts — GET (filter by category + q; only inStock=true; include seller; orderBy createdAt desc) + POST (creates product with sellerId = current user, location derived from user.area + user.city, include seller in response).
+  4. src/app/api/commerce/[id]/order/route.ts — POST dynamic route using Next.js 16 `params: Promise<{ id: string }>` pattern. Validates product exists + inStock, computes total = qty * product.price, includes buyer + product in the response.
+- Created 2 frontend modules:
+  5. src/components/nx/modules/society.tsx — `Society({ uid })`. Tabs from @/components/ui/tabs (first usage in the codebase). Three tabs:
+     - Notices: color-coded cards per type (ANNOUNCEMENT=blue+Megaphone, MAINTENANCE=amber+Wrench, MEETING=violet+CalendarDays, EMERGENCY=red+AlertTriangle), each shows title + body + type badge + timeAgo. Scrollable (max-h-[70vh]).
+     - Visitor Pass: form (visitorName*, visitorPhone, hostName auto-filled from /api/me, hostFlat*, purpose) → POST → toast "Visitor pass issued! 🎫" + reload. Below: scrollable list (max-h-96) of recent passes with status badge color-coded + timeAgo + visitor phone (if present).
+     - Directory: brand-gradient hero card with Building2 avatar, society name/address, 4 stat cards (Total Units, Active Notices, Area, City), and society admin card (Shield icon + name/email) if present.
+  6. src/components/nx/modules/commerce.tsx — `Commerce({ uid })`. Category pills (All, 🛒 Grocery, 🍔 Food, 💊 Medicine, 📦 Parcels, 🔧 Rentals) + search box + "List Product" button. Grid of cards: image (or ShoppingBasket placeholder), category badge (color-coded), inStock indicator (emerald check or muted X), price (inr), title, description, storeName (Store icon), deliveryTime (Truck icon), location (MapPin icon), seller avatar + first name + timeAgo. "Order Now" button (disabled when out of stock) opens a Dialog with qty input + note textarea + live total = qty * price + deliveryTime reminder → POST /api/commerce/[id]/order → toast "Order placed! 🛍️". "List Product" Dialog with title*, description, price*, category Select, storeName, deliveryTime Select, imageUrl → POST /api/commerce → toast "Product listed! 🛒".
+- Both modules include loading skeletons, empty states with icon + helpful copy, and toast.error on every async failure path.
+- Verification: `bun run lint` → exit 0 (no errors, no warnings). `npx tsc --noEmit` → 0 errors in the 6 new files (pre-existing errors in unrelated files like examples/, skills/, prisma/seed-iam.ts, admin-shell.tsx, community-chat.tsx remain untouched).
+- Wrote work record to /home/z/my-project/agent-ctx/Balance-Build-3-full-stack-developer.md (first agent-ctx entry; created the directory).
+
+Stage Summary:
+- ✅ 4 API routes created: /api/society (GET), /api/society/visitor (GET+POST), /api/commerce (GET+POST), /api/commerce/[id]/order (POST). All follow the existing `currentUser(req)` + `db` pattern.
+- ✅ 2 frontend modules created: src/components/nx/modules/society.tsx (Tabs: Notices/Visitor Pass/Directory) and src/components/nx/modules/commerce.tsx (grid + list + order). Both are `"use client"`, accept `{ uid }`, use shadcn/ui components + UserAvatar + inr/timeAgo + toast.
+- ✅ Lint clean (exit 0), TypeScript clean for the 6 new files.
+- ✅ types.ts NOT modified (Society/SocietyNotice/Visitor declared inline in society.tsx as permitted). app-shell.tsx + modules-config.ts NOT modified — the `society` and `commerce` ModuleKeys already exist in the ModuleKey union (types.ts lines 22 + 26); main agent will wire them into modules-config.ts to replace the `coming-soon` placeholder.
+- ✅ No seed data written; no `bun run dev`/`build` run.
+- Files produced: src/app/api/society/route.ts, src/app/api/society/visitor/route.ts, src/app/api/commerce/route.ts, src/app/api/commerce/[id]/order/route.ts, src/components/nx/modules/society.tsx, src/components/nx/modules/commerce.tsx, /home/z/my-project/agent-ctx/Balance-Build-3-full-stack-developer.md.
+
+---
+Task ID: Balance-Features
+Agent: main (Z.ai Code)
+Task: Build all 8 remaining "Coming Soon" modules — Property, Society Management, Multinex Commerce, Fundraising, Volunteer Network, Carpool & Mobility, Borrow & Lend, Skill Exchange (user: "now pls proceed with balance features")
+
+Work Log:
+- Audited current state: 8 modules were "Coming Soon" placeholders in modules-config.ts. All other modules (dashboard, feed, groups, events, chat, lostfound, watch, emergency, reputation, profile, businesses, marketplace, services, jobs, complaints, assistant) were already live.
+- Decided to build all 8 as full DB-backed CRUD modules following the existing marketplace pattern (Prisma model + API route.ts + frontend .tsx with search/filter/create-dialog/card-grid).
+- Schema foundation: Added 9 new Prisma models to prisma/schema.prisma — BorrowItem, SkillListing, CarpoolRide, VolunteerOpportunity, VolunteerSignup, Fundraiser, FundraiserDonation, PropertyListing, CommerceProduct + CommerceOrder. Added back-relations on User. Fixed missing CommerceProduct.orders back-relation. Ran `prisma db push` against Neon → "database is now in sync" (13.5s).
+- TypeScript types: Added all 8 new interfaces (BorrowItem, SkillListing, CarpoolRide, VolunteerOpportunity, VolunteerSignup, Fundraiser, FundraiserDonation, PropertyListing, CommerceProduct, CommerceOrder) to src/lib/types.ts.
+- Dispatched 3 parallel full-stack-developer subagents (Balance-Build-1, -2, -3) to build APIs + frontend modules simultaneously:
+  - Agent 1: Borrow, Skills, Carpool (3 APIs + 3 frontend modules)
+  - Agent 2: Volunteer, Fundraising, Property (5 APIs incl. signup/donate sub-routes + 3 frontend modules)
+  - Agent 3: Society, Commerce (4 APIs incl. visitor + order sub-routes + 2 frontend modules)
+  - All 3 agents completed with clean lint. All followed the marketplace pattern exactly.
+- Wiring: Updated modules-config.ts — removed `comingSoon: true` from all 8 modules, reassigned groups (property→commerce, society→civic, commerce→commerce, fundraising/volunteer/carpool/borrow/skills→community), removed "coming-soon" from GROUP_ORDER. Updated app-shell.tsx — added 8 imports, replaced all ComingSoon blocks with real components, removed unused ComingSoon import.
+- Seeding: Created prisma/seed-balance.ts — idempotent script (deleteMany first) that seeds 45 demo records across all 8 modules: 6 borrow items, 6 skills, 5 carpools, 6 volunteer opportunities (with signups), 4 fundraisers (with donations), 5 properties, 8 commerce products, 5 society notices. Ran against Neon → all counts confirmed.
+- Vercel build issue: /api/skills route returned 404 on Vercel despite working locally and being in the repo. Root cause unclear (Vercel build silently skipped the route — possibly a name collision). Fixed by renaming /api/skills → /api/skill-listings and updating the frontend module's API calls. After rename, all 8 APIs return HTTP 200 on Vercel.
+- Committed in 3 commits: "feat(balance): build all 8 remaining modules" (fd7a4b5), "fix(api): rename /api/skills to /api/skill-listings" (a859416).
+- Pushed to GitHub. Deployed to Vercel 3 times (the extra deploys were to debug the skills 404). Final deploy: build 22s, deploy 56s.
+- Live verification via Agent Browser on https://neighborx.vercel.app (logged in as Arjun from previous session):
+  - All 8 APIs: HTTP 200 ✅ (borrow, skill-listings, carpool, volunteer, fundraising, property, society, commerce)
+  - All 8 sidebar modules visible and clickable ✅
+  - Borrow & Lend: renders 6 seeded items (books, tools, medical, sports) with category chips + type filter + create dialog ✅
+  - Skill Exchange: renders 6 seeded skills (language, academic, computer, music) with mode filter + level badges ✅
+  - Carpool: renders 5 seeded rides (offering + requesting) with route, seats, fuel share ✅
+  - Volunteer Network: renders 6 seeded opportunities (blood donor, elderly, teaching, etc.) with urgency badges + signup button ✅
+  - Fundraising: renders 4 seeded campaigns with progress bars (raised/goal), verified badges, donate dialog ✅
+  - Property: renders 5 seeded listings (rent, PG, sell, commercial, villa) with type filters + price/rent display ✅
+  - Multinex Commerce: renders 8 seeded products (grocery, food, medicine, rentals) with store names + delivery times + order dialog ✅
+  - Society Management: 3 tabs all work — Notices (5 seeded notices color-coded by type), Visitor Pass (pre-approve form + recent passes), Directory (society stats: 120 units, 5 notices, admin info) ✅
+  - "Coming Soon" group gone from sidebar ✅
+  - Console errors: zero ✅
+  - VLM screenshot analysis confirmed: "complete working feature, with functional tabs and populated data. No visible issues."
+
+Stage Summary:
+- ✅ ALL 8 balance features built and live: Property, Society Management, Multinex Commerce, Fundraising, Volunteer Network, Carpool & Mobility, Borrow & Lend, Skill Exchange.
+- ✅ No more "Coming Soon" placeholders — every sidebar module is now a fully functional DB-backed feature.
+- ✅ 9 new Prisma models, 14 new API routes, 8 new frontend modules, 45 seeded demo records.
+- ✅ Live on Vercel: https://neighborx.vercel.app — all 8 modules verified end-to-end via Agent Browser with zero console errors.
+- Known issue: /api/skills route name caused a Vercel build skip (root cause unknown — likely a name collision in the build system). Worked around by renaming to /api/skill-listings. The frontend module is still called "Skill Exchange" in the UI.
+- The app now has 24 fully functional user-facing modules + 16 admin modules = 40 total features.

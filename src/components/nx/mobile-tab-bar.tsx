@@ -11,19 +11,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LayoutDashboard, Newspaper, Users, Siren, Grid3x3 } from "lucide-react";
+import { LayoutDashboard, Newspaper, Siren, Grid3x3, Clapperboard } from "lucide-react";
 
 /**
  * Bottom tab bar — visible only on mobile/tablet (below lg).
  * Native app feel: 4 flat tabs + 1 elevated center SOS button.
- * Phase 1 priority tabs: Home, Feed, Groups + center SOS.
- * The "More" tab opens a bottom sheet with the full module grid.
+ * Primary tabs: Home, Feed, Reels + center SOS.
+ * The "More" tab opens a bottom sheet with the full module grid (incl. Groups).
  */
 
 const PRIMARY_TABS: { key: ModuleKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "dashboard", label: "Home", icon: LayoutDashboard },
   { key: "feed", label: "Feed", icon: Newspaper },
-  { key: "groups", label: "Groups", icon: Users },
+  { key: "reels", label: "Reels", icon: Clapperboard },
 ];
 
 export function MobileTabBar() {

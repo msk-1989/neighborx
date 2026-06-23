@@ -24,6 +24,7 @@ export type ModuleKey =
   | "carpool"
   | "borrow"
   | "commerce"
+  | "reels"   // Phase 5 — Instagram-style short videos
   | "volunteer"
   | "skills"
   // Admin (Super Admin panel — only visible to users with VIEW_ADMIN_PANEL)
@@ -527,5 +528,40 @@ export interface CommerceOrder {
   total: number;
   note?: string | null;
   status: string;
+  createdAt: string;
+}
+
+// =====================================================================
+// Phase 5 — Reels (Instagram-style short videos)
+// =====================================================================
+
+export interface Reel {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl?: string | null;
+  caption: string;
+  music?: string | null;
+  hashtags?: string | null; // comma-separated, e.g. "udgir,diwali,neighborhood"
+  category: string;
+  status: string;
+  likes: number;
+  views: number;
+  authorId: string;
+  author: User;
+  /** comments array — only populated by the comments endpoint, not the list endpoint */
+  comments?: ReelComment[];
+  /** comment count — set by the API list endpoint */
+  commentCount?: number;
+  /** whether the current user has liked this reel */
+  isLiked?: boolean;
+  createdAt: string;
+}
+
+export interface ReelComment {
+  id: string;
+  content: string;
+  reelId: string;
+  authorId: string;
+  author: User;
   createdAt: string;
 }

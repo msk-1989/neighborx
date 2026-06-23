@@ -1,0 +1,859 @@
+     1→// NeighborX — Hyperlocal Community & Commerce Super App
+     2→// PostgreSQL-backed (Neon serverless). Uses String for enum-like fields
+     3→// (no native PG enums) and no arrays — keeps the schema portable.
+     4→//
+     5→// Both local dev and Vercel production use PostgreSQL (Neon). A single
+     6→// DATABASE_URL (Neon pooled) + DIRECT_DATABASE_URL (Neon direct) drive
+     7→// everything, so the generated Prisma client is always a postgres client —
+     8→// no provider swapping needed.
+     9→
+    10→generator client {
+    11→  provider = "prisma-client-js"
+    12→}
+    13→
+    14→datasource db {
+    15→  provider  = "postgresql"
+    16→  url       = env("DATABASE_URL")
+    17→  directUrl = env("DIRECT_DATABASE_URL")
+    18→}
+    19→
+    20→model User {
+    21→  id            String   @id @default(cuid())
+    22→  name          String
+    23→  email         String   @unique
+    24→  phone         String?
+    25→  avatar        String?
+    26→  bio           String?
+    27→  // role: RESIDENT | BUSINESS | SERVICE_PROVIDER | EMPLOYER | SOCIETY_ADMIN | GOV | SUPER_ADMIN
+    28→  role          String   @default("RESIDENT")
+    29→  // verification bitmask levels: 1=mobile,2=email,3=aadhaar,4=address,5=business
+    30→  verifyMobile  Boolean  @default(true)
+    31→  verifyEmail   Boolean  @default(false)
+    32→  verifyAadhaar Boolean  @default(false)
+    33→  verifyAddress Boolean  @default(false)
+    34→  verifyBusiness Boolean @default(false)
+    35→  rewardPoints  Int      @default(0)
+    36→  // Reputation tier: BRONZE | SILVER | GOLD | PLATINUM | LEGEND
+    37→  tier          String   @default("BRONZE")
+    38→  // Community Hero status
+    39→  heroLevel     Int      @default(0)
+    40→  // neighborhood context
+    41→  area          String   @default("Khair Nagar")
+    42→  city          String   @default("Udgir")
+    43→  district      String   @default("Latur")
+    44→  state         String   @default("Maharashtra")
+    45→  society       String   @default("Royal Residency")
+    46→  createdAt     DateTime @default(now())
+    47→
+    48→  posts          Post[]
+    49→  comments       Comment[]
+    50→  reactions      Reaction[]
+    51→  listings       Listing[]
+    52→  businesses     Business[]
+    53→  bookings       ServiceBooking[]
+    54→  jobsPosted     Job[]        @relation("JobEmployer")
+    55→  applications   JobApplication[]
+    56→  emergencies    Emergency[]
+    57→  complaints     Complaint[]
+    58→  lostfound      LostFound[]
+    59→  events         Event[]      @relation("EventOrganizer")
+    60→  rsvps          RSVP[]
+    61→  chatMessages   ChatMessage[]
+    62→  notifications  Notification[]
+    63→  groupMemberships GroupMember[]
+    64→  groupsOwned   Group[]     @relation("GroupOwner")
+    65→  achievements   UserAchievement[]
+    66→  watchAlerts    WatchAlert[]
+    67→  // RBAC: a user can hold multiple roles (e.g. RESIDENT + BUSINESS_OWNER)
+    68→  roles          UserRole[]
+    69→  // admin-related
+    70→  societiesAdmin Society[]    @relation("SocietyAdmin")
+    71→  ticketsRequested SupportTicket[] @relation("TicketRequester")
+    72→  ticketsAssigned SupportTicket[] @relation("TicketAssignee")
+    73→  verificationsRequested VerificationRequest[] @relation("VerificationRequester")
+    74→  reportsFiled   AbuseReport[]  @relation("ReportReporter")
+    75→  reportsHandled AbuseReport[]  @relation("ReportHandler")
+    76→  payments       Payment[]
+    77→  // Phase 3-4 balance features
+    78→  borrowItems    BorrowItem[]
+    79→  skills         SkillListing[]
+    80→  carpools       CarpoolRide[]
+    81→  volunteerOps   VolunteerOpportunity[]
+    82→  volunteerSignups VolunteerSignup[]
+    83→  fundraisers    Fundraiser[]
+    84→  donations      FundraiserDonation[]
+    85→  properties     PropertyListing[]
+    86→  commerceProducts CommerceProduct[]
+    87→  commerceOrders CommerceOrder[]
+    88→}
+    89→
+    90→model Post {
+    91→  id          String   @id @default(cuid())
+    92→  // type: TEXT | IMAGE | VIDEO | POLL | EVENT | EMERGENCY
+    93→  type        String   @default("TEXT")
+    94→  content     String
+    95→  imageUrl    String?
+    96→  // JSON-ish poll data stored as String (question + options)
+    97→  pollData    String?
+    98→  scope       String   @default("SOCIETY") // SOCIETY | AREA | CITY
+    99→  tag         String?  // e.g. Recommendation, Update, Question
+   100→  authorId    String
+   101→  author      User     @relation(fields: [authorId], references: [id])
+   102→  likes       Int      @default(0)
+   103→  comments    Comment[]
+   104→  reactions   Reaction[]
+   105→  createdAt   DateTime @default(now())
+   106→}
+   107→
+   108→model Comment {
+   109→  id        String   @id @default(cuid())
+   110→  content   String
+   111→  postId    String
+   112→  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+   113→  authorId  String
+   114→  author    User     @relation(fields: [authorId], references: [id])
+   115→  createdAt DateTime @default(now())
+   116→}
+   117→
+   118→model Reaction {
+   119→  id       String @id @default(cuid())
+   120→  postId   String
+   121→  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+   122→  authorId String
+   123→  author   User   @relation(fields: [authorId], references: [id])
+   124→  // emoji: 👍 ❤️ 🙏 😂 🔥
+   125→  emoji    String @default("👍")
+   126→}
+   127→
+   128→model Listing {
+   129→  id          String   @id @default(cuid())
+   130→  title       String
+   131→  description String
+   132→  price       Int
+   133→  // category: ELECTRONICS | FURNITURE | VEHICLES | FASHION | BOOKS | APPLIANCES | OTHER
+   134→  category    String   @default("ELECTRONICS")
+   135→  condition   String   @default("Used") // New | Like New | Used | Refurbished
+   136→  imageUrl    String?
+   137→  location    String   @default("Khair Nagar, Udgir")
+   138→  boosted     Boolean  @default(false)
+   139→  status      String   @default("AVAILABLE") // AVAILABLE | SOLD | RESERVED
+   140→  sellerId    String
+   141→  seller      User     @relation(fields: [sellerId], references: [id])
+   142→  createdAt   DateTime @default(now())
+   143→}
+   144→
+   145→model Business {
+   146→  id          String   @id @default(cuid())
+   147→  name        String
+   148→  // category: GROCERY | RESTAURANT | CLINIC | PHARMACY | SALON | GYM | RETAIL | EDUCATION | OTHER
+   149→  category    String   @default("RETAIL")
+   150→  description String
+   151→  address     String
+   152→  phone       String
+   153→  rating      Float    @default(4.5)
+   154→  reviewCount Int      @default(0)
+   155→  imageUrl    String?
+   156→  verified    Boolean  @default(false)
+   157→  featured    Boolean  @default(false)
+   158→  offer       String?
+   159→  ownerId     String
+   160→  owner       User     @relation(fields: [ownerId], references: [id])
+   161→  createdAt   DateTime @default(now())
+   162→}
+   163→
+   164→model Service {
+   165→  id          String   @id @default(cuid())
+   166→  // category: ELECTRICIAN | MAID | DRIVER | TUTOR | PLUMBER | CARPENTER | PAINTER | COOK | CLEANING | BEAUTY
+   167→  category    String   @default("PLUMBER")
+   168→  providerName String
+   169→  bio         String
+   170→  phone       String
+   171→  rating      Float    @default(4.5)
+   172→  jobsDone    Int      @default(0)
+   173→  hourlyRate  Int      @default(250)
+   174→  avatar      String?
+   175→  verified    Boolean  @default(false)
+   176→  available   Boolean  @default(true)
+   177→  bookings    ServiceBooking[]
+   178→}
+   179→
+   180→model ServiceBooking {
+   181→  id         String   @id @default(cuid())
+   182→  serviceId  String
+   183→  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+   184→  userId     String
+   185→  user       User     @relation(fields: [userId], references: [id])
+   186→  date       String
+   187→  slot       String
+   188→  note       String?
+   189→  status     String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
+   190→  createdAt  DateTime @default(now())
+   191→}
+   192→
+   193→model Job {
+   194→  id          String   @id @default(cuid())
+   195→  title       String
+   196→  company     String
+   197→  description String
+   198→  // type: FULL_TIME | PART_TIME | CONTRACT | INTERNSHIP | REMOTE
+   199→  jobType     String   @default("FULL_TIME")
+   200→  salary      String   @default("₹15,000 - ₹25,000")
+   201→  location    String   @default("Udgir")
+   202→  category    String   @default("GENERAL") // DELIVERY | RETAIL | SALES | TECH | ACCOUNTS | GENERAL
+   203→  openings    Int      @default(1)
+   204→  employerId  String
+   205→  employer    User     @relation("JobEmployer", fields: [employerId], references: [id])
+   206→  applications JobApplication[]
+   207→  createdAt   DateTime @default(now())
+   208→}
+   209→
+   210→model JobApplication {
+   211→  id       String @id @default(cuid())
+   212→  jobId    String
+   213→  job      Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+   214→  applicantId String
+   215→  applicant User @relation(fields: [applicantId], references: [id])
+   216→  status   String @default("APPLIED") // APPLIED | REVIEWED | SHORTLISTED | REJECTED | HIRED
+   217→  cover    String?
+   218→  createdAt DateTime @default(now())
+   219→}
+   220→
+   221→model Emergency {
+   222→  id          String   @id @default(cuid())
+   223→  // category: BLOOD | ACCIDENT | MEDICAL | MISSING_PERSON | FIRE | CRIME | WOMEN_SAFETY
+   224→  category    String   @default("MEDICAL")
+   225→  title       String
+   226→  description String
+   227→  location    String
+   228→  // severity: LOW | MEDIUM | HIGH | CRITICAL
+   229→  severity    String   @default("HIGH")
+   230→  status      String   @default("ACTIVE") // ACTIVE | RESOLVED
+   231→  reporterId  String
+   232→  reporter    User     @relation(fields: [reporterId], references: [id])
+   233→  responders  Int      @default(0)
+   234→  createdAt   DateTime @default(now())
+   235→}
+   236→
+   237→model Complaint {
+   238→  id          String   @id @default(cuid())
+   239→  // category: ROAD | GARBAGE | WATER | ELECTRICITY | STREETLIGHT | DRAINAGE | OTHER
+   240→  category    String   @default("GARBAGE")
+   241→  title       String
+   242→  description String
+   243→  location    String
+   244→  imageUrl    String?
+   245→  // status: SUBMITTED | IN_PROGRESS | RESOLVED
+   246→  status      String   @default("SUBMITTED")
+   247→  // AI auto-classification confidence
+   248→  aiCategory  String?
+   249→  aiConfidence Float?
+   250→  reporterId  String
+   251→  reporter    User     @relation(fields: [reporterId], references: [id])
+   252→  upvotes     Int      @default(0)
+   253→  createdAt   DateTime @default(now())
+   254→}
+   255→
+   256→model LostFound {
+   257→  id          String   @id @default(cuid())
+   258→  // type: LOST | FOUND
+   259→  type        String   @default("LOST")
+   260→  // category: PET | MOBILE | DOCUMENT | VEHICLE | KEYS | OTHER
+   261→  category    String   @default("OTHER")
+   262→  title       String
+   263→  description String
+   264→  imageUrl    String?
+   265→  location    String
+   266→  reward      Int      @default(0)
+   267→  status      String   @default("OPEN") // OPEN | REUNITED | CLOSED
+   268→  reporterId  String
+   269→  reporter    User     @relation(fields: [reporterId], references: [id])
+   270→  createdAt   DateTime @default(now())
+   271→}
+   272→
+   273→model Event {
+   274→  id          String   @id @default(cuid())
+   275→  title       String
+   276→  description String
+   277→  // category: SOCIAL | SPORTS | CULTURAL | RELIGIOUS | EDUCATION | MEETING
+   278→  category    String   @default("SOCIAL")
+   279→  date        String
+   280→  time        String
+   281→  venue       String
+   282→  imageUrl    String?
+   283→  organizerId String
+   284→  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id])
+   285→  rsvps       RSVP[]
+   286→  createdAt   DateTime @default(now())
+   287→}
+   288→
+   289→model RSVP {
+   290→  id       String @id @default(cuid())
+   291→  eventId  String
+   292→  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+   293→  userId   String
+   294→  user     User   @relation(fields: [userId], references: [id])
+   295→  status   String @default("GOING") // GOING | INTERESTED | NOT_GOING
+   296→}
+   297→
+   298→model ChatMessage {
+   299→  id        String   @id @default(cuid())
+   300→  roomId    String
+   301→  senderId  String
+   302→  sender    User     @relation(fields: [senderId], references: [id])
+   303→  text      String
+   304→  createdAt DateTime @default(now())
+   305→}
+   306→
+   307→model Notification {
+   308→  id        String   @id @default(cuid())
+   309→  userId    String
+   310→  user      User     @relation(fields: [userId], references: [id])
+   311→  title     String
+   312→  body      String
+   313→  // type: EMERGENCY | SOCIAL | MARKETPLACE | JOB | SYSTEM
+   314→  type      String   @default("SYSTEM")
+   315→  read      Boolean  @default(false)
+   316→  createdAt DateTime @default(now())
+   317→}
+   318→
+   319→// ===== Phase 1 additions =====
+   320→
+   321→// Community Groups — Pillar 1 (Community)
+   322→model Group {
+   323→  id          String   @id @default(cuid())
+   324→  name        String
+   325→  description String
+   326→  // category: HOBIES | SPORTS | RELIGIOUS | PROFESSIONAL | WOMEN | YOUTH | SENIORS | PARENTS | PETS | VOLUNTEER | OTHER
+   327→  category    String   @default("OTHER")
+   328→  icon        String?
+   329→  // privacy: PUBLIC | PRIVATE | SECRET
+   330→  privacy     String   @default("PUBLIC")
+   331→  scope       String   @default("SOCIETY") // SOCIETY | AREA | CITY
+   332→  area        String   @default("Khair Nagar")
+   333→  city        String   @default("Udgir")
+   334→  society     String   @default("Royal Residency")
+   335→  ownerId     String
+   336→  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id])
+   337→  members     GroupMember[]
+   338→  memberCount Int      @default(1)
+   339→  createdAt   DateTime @default(now())
+   340→}
+   341→
+   342→model GroupMember {
+   343→  id        String   @id @default(cuid())
+   344→  groupId   String
+   345→  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+   346→  userId    String
+   347→  user      User     @relation(fields: [userId], references: [id])
+   348→  // role: OWNER | ADMIN | MEMBER
+   349→  role      String   @default("MEMBER")
+   350→  joinedAt  DateTime @default(now())
+   351→
+   352→  @@unique([groupId, userId])
+   353→}
+   354→
+   355→// Reputation & Gamification — Pillar 20 (Rewards & Gamification)
+   356→model Achievement {
+   357→  id          String   @id @default(cuid())
+   358→  // code is the stable identifier (e.g. FIRST_POST, HELPER, SOS_RESPONDER)
+   359→  code        String   @unique
+   360→  title       String
+   361→  description String
+   362→  icon        String
+   363→  // tier: BRONZE | SILVER | GOLD | PLATINUM | LEGEND
+   364→  tier        String   @default("BRONZE")
+   365→  points      Int      @default(10)
+   366→  earnedBy    UserAchievement[]
+   367→}
+   368→
+   369→model UserAchievement {
+   370→  id            String   @id @default(cuid())
+   371→  userId        String
+   372→  user          User     @relation(fields: [userId], references: [id])
+   373→  achievementId String
+   374→  achievement   Achievement @relation(fields: [achievementId], references: [id])
+   375→  earnedAt      DateTime @default(now())
+   376→
+   377→  @@unique([userId, achievementId])
+   378→}
+   379→
+   380→// Neighborhood Watch — Pillar 3 (Safety)
+   381→model WatchAlert {
+   382→  id          String   @id @default(cuid())
+   383→  // type: SCAM | CRIME | SUSPICIOUS | SAFETY_TIP | MISSING_PERSON | MISSING_PET
+   384→  type        String   @default("SUSPICIOUS")
+   385→  title       String
+   386→  description String
+   387→  location    String
+   388→  // severity: LOW | MEDIUM | HIGH | CRITICAL
+   389→  severity    String   @default("MEDIUM")
+   390→  status      String   @default("ACTIVE") // ACTIVE | RESOLVED
+   391→  reporterId  String
+   392→  reporter    User     @relation(fields: [reporterId], references: [id])
+   393→  helpfulCount Int     @default(0)
+   394→  createdAt   DateTime @default(now())
+   395→}
+   396→
+   397→// =====================================================================
+   398→// IAM / RBAC — Identity & Access Management
+   399→// =====================================================================
+   400→// Pillar: IAM (Role-Based Access Control). Every screen, button, API and
+   401→// action is controlled by Roles + Permissions. A user can hold multiple
+   402→// roles; each role grants a set of permissions.
+   403→
+   404→// All possible roles (user-facing + 10-level admin hierarchy)
+   405→model Role {
+   406→  id          String   @id @default(cuid())
+   407→  // code: GUEST | RESIDENT | VERIFIED_RESIDENT | BUSINESS_OWNER |
+   408→  //       SERVICE_PROVIDER | EMPLOYER | PROPERTY_OWNER | VOLUNTEER |
+   409→  //       SOCIETY_ADMIN | AREA_MODERATOR | CITY_MODERATOR | BUSINESS_ADMIN |
+   410→  //       ORG_ADMIN | SUPPORT_ADMIN | OPERATIONS_ADMIN | REVENUE_ADMIN |
+   411→  //       COMPLIANCE_ADMIN | SUPER_ADMIN
+   412→  code        String   @unique
+   413→  name        String
+   414→  description String
+   415→  // level: 0=user roles, 1-10=admin hierarchy (Society Admin=1 ... Super Admin=10)
+   416→  level       Int      @default(0)
+   417→  // category: USER | ADMIN
+   418→  category    String   @default("USER")
+   419→  isSystem    Boolean  @default(true) // system roles cannot be deleted
+   420→  permissions RolePermission[]
+   421→  users       UserRole[]
+   422→  createdAt   DateTime @default(now())
+   423→}
+   424→
+   425→model Permission {
+   426→  id          String   @id @default(cuid())
+   427→  // code: e.g. CREATE_POST, DELETE_POST, VERIFY_USER, MANAGE_CITY,
+   428→  //       APPROVE_BUSINESS, VIEW_REVENUE, MANAGE_USERS, etc.
+   429→  code        String   @unique
+   430→  name        String
+   431→  description String
+   432→  // module: which feature area this permission belongs to
+   433→  // COMMUNITY | MARKETPLACE | BUSINESS | SERVICE | JOB | PROPERTY |
+   434→  // SAFETY | SOCIETY | CIVIC | NEWS | REWARDS | AI | FINANCE | CMS |
+   435→  // SETTINGS | TRUST | IAM | SUPPORT | OPERATIONS | COMPLIANCE
+   436→  module      String   @default("COMMUNITY")
+   437→  // action: CREATE | READ | UPDATE | DELETE | APPROVE | VERIFY | MANAGE | VIEW
+   438→  action      String   @default("READ")
+   439→  roles       RolePermission[]
+   440→  createdAt   DateTime @default(now())
+   441→}
+   442→
+   443→// Many-to-many: Role <-> Permission
+   444→model RolePermission {
+   445→  id           String     @id @default(cuid())
+   446→  roleId       String
+   447→  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+   448→  permissionId String
+   449→  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+   450→  createdAt    DateTime   @default(now())
+   451→
+   452→  @@unique([roleId, permissionId])
+   453→}
+   454→
+   455→// Many-to-many: User <-> Role (a user can hold multiple roles)
+   456→model UserRole {
+   457→  id        String   @id @default(cuid())
+   458→  userId    String
+   459→  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   460→  roleId    String
+   461→  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+   462→  // scope: for scoped roles like SOCIETY_ADMIN / AREA_MODERATOR, the scope
+   463→  // identifies the society/area/city the role applies to
+   464→  scope     String?
+   465→  grantedBy String?
+   466→  grantedAt DateTime @default(now())
+   467→
+   468→  @@unique([userId, roleId, scope])
+   469→}
+   470→
+   471→// =====================================================================
+   472→// Admin-ecosystem models
+   473→// =====================================================================
+   474→
+   475→// Society — managed by Society Admin (Level 1)
+   476→model Society {
+   477→  id          String   @id @default(cuid())
+   478→  name        String
+   479→  address     String
+   480→  area        String   @default("Khair Nagar")
+   481→  city        String   @default("Udgir")
+   482→  district    String   @default("Latur")
+   483→  state       String   @default("Maharashtra")
+   484→  // total units / flats
+   485→  totalUnits  Int      @default(0)
+   486→  adminId     String?
+   487→  admin       User?    @relation("SocietyAdmin", fields: [adminId], references: [id])
+   488→  visitors    Visitor[]
+   489→  notices     SocietyNotice[]
+   490→  createdAt   DateTime @default(now())
+   491→}
+   492→
+   493→model Visitor {
+   494→  id          String   @id @default(cuid())
+   495→  societyId   String
+   496→  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+   497→  visitorName String
+   498→  visitorPhone String?
+   499→  hostName    String
+   500→  hostFlat    String
+   501→  // status: PENDING | APPROVED | CHECKED_IN | CHECKED_OUT | DENIED
+   502→  status      String   @default("PENDING")
+   503→  purpose     String?
+   504→  checkInTime DateTime?
+   505→  checkOutTime DateTime?
+   506→  createdAt   DateTime @default(now())
+   507→}
+   508→
+   509→model SocietyNotice {
+   510→  id          String   @id @default(cuid())
+   511→  societyId   String
+   512→  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+   513→  title       String
+   514→  body        String
+   515→  // type: ANNOUNCEMENT | MAINTENANCE | MEETING | EMERGENCY
+   516→  type        String   @default("ANNOUNCEMENT")
+   517→  createdAt   DateTime @default(now())
+   518→}
+   519→
+   520→// Support tickets — handled by Support Admin (Level 6)
+   521→model SupportTicket {
+   522→  id          String   @id @default(cuid())
+   523→  // type: HELP | BUG | VERIFICATION | BILLING | ABUSE | OTHER
+   524→  type        String   @default("HELP")
+   525→  // status: OPEN | IN_PROGRESS | RESOLVED | CLOSED
+   526→  status      String   @default("OPEN")
+   527→  // priority: LOW | MEDIUM | HIGH | URGENT
+   528→  priority    String   @default("MEDIUM")
+   529→  subject     String
+   530→  description String
+   531→  requesterId String
+   532→  requester   User     @relation("TicketRequester", fields: [requesterId], references: [id])
+   533→  assigneeId  String?
+   534→  assignee    User?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+   535→  resolution  String?
+   536→  createdAt   DateTime @default(now())
+   537→  updatedAt   DateTime @updatedAt
+   538→}
+   539→
+   540→// Verification requests — handled by Operations Admin (Level 7)
+   541→model VerificationRequest {
+   542→  id          String   @id @default(cuid())
+   543→  // type: AADHAAR | ADDRESS | BUSINESS | SERVICE_PROVIDER | PROPERTY | FUNDRAISING
+   544→  type        String
+   545→  // status: PENDING | APPROVED | REJECTED
+   546→  status      String   @default("PENDING")
+   547→  requesterId String
+   548→  requester   User     @relation("VerificationRequester", fields: [requesterId], references: [id])
+   549→  // document URL / reference
+   550→  documentRef String?
+   551→  notes       String?
+   552→  reviewedBy  String?
+   553→  reviewedAt  DateTime?
+   554→  createdAt   DateTime @default(now())
+   555→}
+   556→
+   557→// Abuse reports — handled by Compliance Admin (Level 9)
+   558→model AbuseReport {
+   559→  id          String   @id @default(cuid())
+   560→  // targetType: POST | COMMENT | LISTING | BUSINESS | USER | MESSAGE
+   561→  targetType  String
+   562→  targetId    String
+   563→  reason      String
+   564→  description String?
+   565→  // status: PENDING | REVIEWING | ACTIONED | DISMISSED
+   566→  status      String   @default("PENDING")
+   567→  // action: NONE | WARNING | CONTENT_REMOVED | USER_SUSPENDED | USER_BANNED
+   568→  action      String   @default("NONE")
+   569→  reporterId  String
+   570→  reporter    User     @relation("ReportReporter", fields: [reporterId], references: [id])
+   571→  handlerId   String?
+   572→  handler     User?    @relation("ReportHandler", fields: [handlerId], references: [id])
+   573→  createdAt   DateTime @default(now())
+   574→  handledAt   DateTime?
+   575→}
+   576→
+   577→// Payments — managed by Revenue Admin (Level 8)
+   578→model Payment {
+   579→  id          String   @id @default(cuid())
+   580→  userId      String
+   581→  user        User     @relation(fields: [userId], references: [id])
+   582→  // type: SUBSCRIPTION | COMMISSION | REFUND | PAYOUT | LISTING_BOOST
+   583→  type        String
+   584→  amount      Float
+   585→  currency    String   @default("INR")
+   586→  // status: PENDING | SUCCESS | FAILED | REFUNDED
+   587→  status      String   @default("PENDING")
+   588→  // gateway: RAZORPAY | UPI | BANK_TRANSFER | WALLET
+   589→  gateway     String   @default("RAZORPAY")
+   590→  txnRef      String?
+   591→  invoiceNo   String?
+   592→  createdAt   DateTime @default(now())
+   593→}
+   594→
+   595→// Subscriptions / plans
+   596→model Subscription {
+   597→  id          String   @id @default(cuid())
+   598→  // plan: FREE | BUSINESS_PRO | SERVICE_PRO | EMPLOYER_PRO | SOCIETY_PRO | ENTERPRISE
+   599→  plan        String   @default("FREE")
+   600→  price       Float    @default(0)
+   601→  billingCycle String  @default("MONTHLY") // MONTHLY | YEARLY
+   602→  features    String   // JSON string of feature list
+   603→  active      Boolean  @default(true)
+   604→  createdAt   DateTime @default(now())
+   605→}
+   606→
+   607→// CMS pages — managed via Super Admin CMS module
+   608→model CmsPage {
+   609→  id          String   @id @default(cuid())
+   610→  slug        String   @unique
+   611→  title       String
+   612→  content     String
+   613→  // type: PAGE | BLOG | FAQ
+   614→  type        String   @default("PAGE")
+   615→  published   Boolean  @default(false)
+   616→  createdAt   DateTime @default(now())
+   617→  updatedAt   DateTime @updatedAt
+   618→}
+   619→
+   620→// Location master data — managed via Super Admin Settings module
+   621→model Location {
+   622→  id          String   @id @default(cuid())
+   623→  // level: COUNTRY | STATE | CITY | AREA
+   624→  level       String
+   625→  name        String
+   626→  parentId    String?
+   627→  active      Boolean  @default(true)
+   628→  createdAt   DateTime @default(now())
+   629→}
+   630→
+   631→// Categories master data — managed via Super Admin Settings module
+   632→model Category {
+   633→  id          String   @id @default(cuid())
+   634→  // module: MARKETPLACE | BUSINESS | SERVICE | JOB | PROPERTY | EVENT
+   635→  module      String
+   636→  name        String
+   637→  icon        String?
+   638→  active      Boolean  @default(true)
+   639→  createdAt   DateTime @default(now())
+   640→}
+   641→
+   642→// OTP codes for passwordless login/register — expires in 10 minutes
+   643→model OtpCode {
+   644→  id        String   @id @default(cuid())
+   645→  email     String
+   646→  code      String
+   647→  // purpose: LOGIN | REGISTER
+   648→  purpose   String   @default("LOGIN")
+   649→  consumed  Boolean  @default(false)
+   650→  expiresAt DateTime
+   651→  createdAt DateTime @default(now())
+   652→
+   653→  @@index([email, createdAt])
+   654→}
+   655→
+   656→// =====================================================================
+   657→// Phase 3-4 — Balance Features
+   658→// =====================================================================
+   659→
+   660→// Borrow & Lend — share books, tools, equipment, medical gear, sports gear
+   661→model BorrowItem {
+   662→  id          String   @id @default(cuid())
+   663→  title       String
+   664→  description String
+   665→  // category: BOOKS | TOOLS | EQUIPMENT | MEDICAL | SPORTS | APPLIANCES | OTHER
+   666→  category    String   @default("OTHER")
+   667→  // type: LEND (owner offering) | BORROW (neighbor requesting)
+   668→  type        String   @default("LEND")
+   669→  condition   String   @default("Good") // New | Good | Fair
+   670→  imageUrl    String?
+   671→  // dailyRate: 0 = free, else ₹ per day
+   672→  dailyRate   Int      @default(0)
+   673→  // security deposit in ₹
+   674→  deposit     Int      @default(0)
+   675→  // max lend duration, e.g. "7 days"
+   676→  duration    String   @default("7 days")
+   677→  location    String   @default("Khair Nagar, Udgir")
+   678→  // status: AVAILABLE | BORROWED | RETURNED
+   679→  status      String   @default("AVAILABLE")
+   680→  ownerId     String
+   681→  owner       User     @relation(fields: [ownerId], references: [id])
+   682→  createdAt   DateTime @default(now())
+   683→}
+   684→
+   685→// Skill Exchange — teach & learn skills peer-to-peer
+   686→model SkillListing {
+   687→  id          String   @id @default(cuid())
+   688→  title       String
+   689→  description String
+   690→  // category: LANGUAGE | ACADEMIC | COMPUTER | MUSIC | ART | PROFESSIONAL | OTHER
+   691→  category    String   @default("OTHER")
+   692→  // mode: OFFLINE | ONLINE | BOTH
+   693→  mode        String   @default("BOTH")
+   694→  // level: BEGINNER | INTERMEDIATE | ADVANCED
+   695→  level       String   @default("BEGINNER")
+   696→  // rate per hour in ₹; 0 = free / skill-swap
+   697→  rate        Int      @default(0)
+   698→  location    String   @default("Khair Nagar, Udgir")
+   699→  availability String  @default("Weekends")
+   700→  // status: ACTIVE | PAUSED
+   701→  status      String   @default("ACTIVE")
+   702→  teacherId   String
+   703→  teacher     User     @relation(fields: [teacherId], references: [id])
+   704→  createdAt   DateTime @default(now())
+   705→}
+   706→
+   707→// Carpool & Mobility — share rides with neighbors
+   708→model CarpoolRide {
+   709→  id          String   @id @default(cuid())
+   710→  // type: OFFER (offering a ride) | REQUEST (need a ride)
+   711→  type        String   @default("OFFER")
+   712→  fromLocation String
+   713→  toLocation  String
+   714→  date        String
+   715→  time        String
+   716→  seats       Int      @default(1)
+   717→  seatsFilled Int      @default(0)
+   718→  // recurring: "One-time" | "Mon-Fri" | "Daily" | "Weekends"
+   719→  recurring   String   @default("One-time")
+   720→  notes       String?
+   721→  // fuel share contribution in ₹; 0 = free
+   722→  contribution Int     @default(0)
+   723→  // status: OPEN | FULL | CLOSED
+   724→  status      String   @default("OPEN")
+   725→  driverId    String
+   726→  driver      User     @relation(fields: [driverId], references: [id])
+   727→  createdAt   DateTime @default(now())
+   728→}
+   729→
+   730→// Volunteer Network — blood donors, disaster response, community service
+   731→model VolunteerOpportunity {
+   732→  id          String   @id @default(cuid())
+   733→  // type: BLOOD_DONOR | DISASTER | ELDERLY | TEACHING | ENVIRONMENT | ANIMALS | OTHER
+   734→  type        String   @default("OTHER")
+   735→  title       String
+   736→  description String
+   737→  location    String
+   738→  // urgency: LOW | MEDIUM | HIGH | CRITICAL
+   739→  urgency     String   @default("MEDIUM")
+   740→  date        String?
+   741→  contactInfo String
+   742→  slots       Int      @default(1)
+   743→  filled      Int      @default(0)
+   744→  // status: OPEN | FILLED | CLOSED
+   745→  status      String   @default("OPEN")
+   746→  organizerId String
+   747→  organizer   User     @relation(fields: [organizerId], references: [id])
+   748→  signups     VolunteerSignup[]
+   749→  createdAt   DateTime @default(now())
+   750→}
+   751→
+   752→model VolunteerSignup {
+   753→  id            String   @id @default(cuid())
+   754→  opportunityId String
+   755→  opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+   756→  userId        String
+   757→  user          User     @relation(fields: [userId], references: [id])
+   758→  // status: INTERESTED | CONFIRMED | ATTENDED | CANCELLED
+   759→  status        String   @default("INTERESTED")
+   760→  createdAt     DateTime @default(now())
+   761→
+   762→  @@unique([opportunityId, userId])
+   763→}
+   764→
+   765→// Fundraising — community crowdfunding
+   766→model Fundraiser {
+   767→  id          String   @id @default(cuid())
+   768→  title       String
+   769→  description String
+   770→  story       String
+   771→  // category: MEDICAL | EDUCATION | NGO | COMMUNITY | EMERGENCY | ANIMALS
+   772→  category    String   @default("COMMUNITY")
+   773→  goal        Int      @default(10000)
+   774→  raised      Int      @default(0)
+   775→  imageUrl    String?
+   776→  beneficiaryName String
+   777→  endDate     String
+   778→  verified    Boolean  @default(false)
+   779→  // status: ACTIVE | CLOSED | GOAL_REACHED
+   780→  status      String   @default("ACTIVE")
+   781→  organizerId String
+   782→  organizer   User     @relation(fields: [organizerId], references: [id])
+   783→  donations   FundraiserDonation[]
+   784→  createdAt   DateTime @default(now())
+   785→}
+   786→
+   787→model FundraiserDonation {
+   788→  id           String   @id @default(cuid())
+   789→  fundraiserId String
+   790→  fundraiser   Fundraiser @relation(fields: [fundraiserId], references: [id], onDelete: Cascade)
+   791→  donorId      String
+   792→  donor        User     @relation(fields: [donorId], references: [id])
+   793→  amount       Int
+   794→  message      String?
+   795→  anonymous    Boolean  @default(false)
+   796→  createdAt    DateTime @default(now())
+   797→}
+   798→
+   799→// Property — hyperlocal real estate (buy, sell, rent, PG, hostel, commercial)
+   800→model PropertyListing {
+   801→  id          String   @id @default(cuid())
+   802→  title       String
+   803→  description String
+   804→  // type: SELL | RENT | PG | HOSTEL | COMMERCIAL
+   805→  type        String   @default("RENT")
+   806→  // propertyType: 1BHK | 2BHK | 3BHK | 4BHK | PLOT | SHOP | OFFICE | VILLA
+   807→  propertyType String  @default("2BHK")
+   808→  price       Int      @default(0)
+   809→  rent        Int      @default(0)
+   810→  deposit     Int      @default(0)
+   811→  area        String   @default("Sq.ft")
+   812→  furnishing  String   @default("SEMI") // FURNISHED | SEMI | UNFURNISHED
+   813→  address     String
+   814→  imageUrl    String?
+   815→  bedrooms    Int      @default(2)
+   816→  bathrooms   Int      @default(1)
+   817→  amenities   String?
+   818→  location    String   @default("Khair Nagar, Udgir")
+   819→  // status: AVAILABLE | SOLD | RENTED
+   820→  status      String   @default("AVAILABLE")
+   821→  ownerId     String
+   822→  owner       User     @relation(fields: [ownerId], references: [id])
+   823→  createdAt   DateTime @default(now())
+   824→}
+   825→
+   826→// Multinex Commerce — hyperlocal grocery, food, medicine, parcels, rentals
+   827→model CommerceProduct {
+   828→  id          String   @id @default(cuid())
+   829→  title       String
+   830→  description String
+   831→  // category: GROCERY | FOOD | MEDICINE | PARCELS | RENTALS
+   832→  category    String   @default("GROCERY")
+   833→  price       Int
+   834→  imageUrl    String?
+   835→  storeName   String
+   836→  // deliveryTime: e.g. "30 min", "2 hours", "Same day"
+   837→  deliveryTime String  @default("Same day")
+   838→  inStock     Boolean  @default(true)
+   839→  location    String   @default("Khair Nagar, Udgir")
+   840→  sellerId    String
+   841→  seller      User     @relation(fields: [sellerId], references: [id])
+   842→  orders      CommerceOrder[]
+   843→  createdAt   DateTime @default(now())
+   844→}
+   845→
+   846→model CommerceOrder {
+   847→  id          String   @id @default(cuid())
+   848→  productId   String
+   849→  product     CommerceProduct @relation(fields: [productId], references: [id])
+   850→  buyerId     String
+   851→  buyer       User     @relation(fields: [buyerId], references: [id])
+   852→  qty         Int      @default(1)
+   853→  total       Int
+   854→  note        String?
+   855→  // status: PLACED | CONFIRMED | OUT_FOR_DELIVERY | DELIVERED | CANCELLED
+   856→  status      String   @default("PLACED")
+   857→  createdAt   DateTime @default(now())
+   858→}
+   859→

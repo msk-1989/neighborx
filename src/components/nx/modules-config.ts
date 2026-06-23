@@ -27,6 +27,8 @@ import {
   ShoppingBasket,
   HandHeart,
   GraduationCap,
+  // Phase 5 — Reels
+  Clapperboard,
   // Admin
   Crown,
 } from "lucide-react";
@@ -91,6 +93,9 @@ export const MODULES: ModuleDef[] = [
   { key: "carpool", label: "Carpool & Mobility", icon: Car, desc: "Office, school, shared rides", group: "community", phase: 4 },
   { key: "borrow", label: "Borrow & Lend", icon: PackageOpen, desc: "Books, tools, equipment sharing", group: "community", phase: 4 },
   { key: "skills", label: "Skill Exchange", icon: GraduationCap, desc: "Language, music, computer training", group: "community", phase: 4 },
+
+  // ── Phase 5: Reels (Instagram-style short videos) ──
+  { key: "reels", label: "Reels", icon: Clapperboard, desc: "Neighborhood short videos", group: "community", phase: 4 },
 
   // NOTE: The Admin Console is NO LONGER a sidebar tab. It is a completely
   // separate shell (AdminShell) accessed via the "Admin Console" button in

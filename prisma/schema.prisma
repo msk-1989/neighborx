@@ -85,6 +85,10 @@ model User {
   properties     PropertyListing[]
   commerceProducts CommerceProduct[]
   commerceOrders CommerceOrder[]
+  // Reels — Instagram-style short videos
+  reels          Reel[]
+  reelLikes      ReelLike[]
+  reelComments   ReelComment[]
 }
 
 model Post {
@@ -855,4 +859,54 @@ model CommerceOrder {
   // status: PLACED | CONFIRMED | OUT_FOR_DELIVERY | DELIVERED | CANCELLED
   status      String   @default("PLACED")
   createdAt   DateTime @default(now())
+}
+
+// =====================================================================
+// Reels — Instagram-style short vertical videos (Phase 5)
+// =====================================================================
+
+model Reel {
+  id          String   @id @default(cuid())
+  videoUrl    String
+  thumbnailUrl String?
+  caption     String
+  music       String?
+  // comma-separated hashtags, e.g. "udgir,diwali,neighborhood"
+  hashtags    String?
+  likes       Int      @default(0)
+  views       Int      @default(0)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  // category: COMMUNITY | EVENT | FOOD | FESTIVAL | NATURE | COMEDY | TIPS | OTHER
+  category    String   @default("COMMUNITY")
+  // status: ACTIVE | ARCHIVED | HIDDEN
+  status      String   @default("ACTIVE")
+  reelLikes   ReelLike[]
+  reelComments ReelComment[]
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model ReelLike {
+  id        String   @id @default(cuid())
+  reelId    String
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([reelId, userId])
+}
+
+model ReelComment {
+  id        String   @id @default(cuid())
+  content   String
+  reelId    String
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([reelId])
 }

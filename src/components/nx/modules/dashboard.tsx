@@ -72,12 +72,14 @@ export function Dashboard({ uid }: { uid: string }) {
   // Live modules only (no coming-soon) for the explore grid
   const liveModules = MODULES.filter((m) => m.key !== "dashboard" && !m.comingSoon);
 
-  // Roadmap phases for the vision card
+  // Roadmap phases for the vision card — all four phases are now LIVE.
+  // (Property, Society, Civic, AI, Commerce, Fundraising, Volunteer,
+  //  Carpool, Borrow & Lend, Skills are all shipped modules.)
   const phases = [
     { phase: 1, label: "Community · Trust · Safety", live: true, color: "bg-emerald-500" },
     { phase: 2, label: "Marketplace · Services · Jobs", live: true, color: "bg-amber-500" },
-    { phase: 3, label: "Property · Society · Civic", live: false, color: "bg-orange-500" },
-    { phase: 4, label: "AI · Commerce · Fundraising", live: false, color: "bg-fuchsia-500" },
+    { phase: 3, label: "Property · Society · Civic", live: true, color: "bg-orange-500" },
+    { phase: 4, label: "AI · Commerce · Fundraising", live: true, color: "bg-fuchsia-500" },
   ];
 
   return (
