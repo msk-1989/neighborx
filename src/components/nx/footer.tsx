@@ -11,6 +11,8 @@ import {
   BookOpen,
   Clapperboard,
   Layers,
+  Phone,
+  Building,
 } from "lucide-react";
 
 /**
@@ -127,6 +129,15 @@ export function Footer() {
                       hello@neighborx.in
                     </a>
                   </li>
+                  <li>
+                    <a
+                      href="tel:+919890372241"
+                      className="tap-feedback flex items-center gap-2 transition-colors hover:text-primary"
+                    >
+                      <Phone className="h-4 w-4 shrink-0 text-primary" />
+                      <span>+91 98903 72241</span>
+                    </a>
+                  </li>
                 </ul>
               </nav>
             </div>
@@ -134,14 +145,33 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row">
-          <div className="flex items-center gap-1.5">
-            <span>
-              &copy; {year} NeighborX &middot; Made for India
-            </span>
-            <span aria-hidden className="text-base leading-none">
-              🇮🇳
-            </span>
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <div className="flex flex-col items-center gap-1.5 sm:items-start">
+            <div className="flex items-center gap-1.5">
+              <span>
+                &copy; {year} NeighborX &middot; All rights reserved
+              </span>
+              <span aria-hidden className="text-base leading-none">
+                🇮🇳
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <Building className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>
+                Developed by{" "}
+                <span className="font-semibold text-foreground">
+                  Multinex Multi Solutions LLP
+                </span>
+              </span>
+              <span aria-hidden className="text-muted-foreground/40">·</span>
+              <a
+                href="tel:+919890372241"
+                className="tap-feedback flex items-center gap-1 font-medium transition-colors hover:text-primary"
+              >
+                <Phone className="h-3 w-3" />
+                +91 98903 72241
+              </a>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <a href="#" className="tap-feedback transition-colors hover:text-primary">
