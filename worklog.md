@@ -835,3 +835,44 @@ Stage Summary:
 - ✅ "Admin Console" button in user header (admins only) → AdminShell. "Back to App" → user view.
 - ✅ Favicon replaced with the NeighborX house logo on brand gradient.
 - ✅ Live on Vercel: https://neighborx.vercel.app — fully verified end-to-end.
+
+---
+Task ID: Remove-Panel-Footers
+Agent: main (Z.ai Code)
+Task: User said "i think we dont need footer in panels" — remove the marketing footer from the in-app panels (user app + admin console), keep it only on the public landing page.
+
+Work Log:
+- Read worklog.md to confirm prior state: Admin-Shell-Separation task already done & deployed (admin is a separate shell, favicon already replaced). This was a NEW, smaller request on top.
+- Analyzed screenshot uploaded by user (pasted_image_1782223122989.png) via VLM: showed the logged-in user app with sidebar (Events, Community Chat, Lost & Found, SAFETY) + category cards + a marketing footer at the bottom (NeighborX logo, platform features, Why NeighborX, contact, legal links). Confirmed the footer the user wants gone.
+- Grepped for footer usage across src/components/nx/: found 4 locations —
+  1. landing-page.tsx (line 1026): `<Footer />` — the public marketing site. KEEP.
+  2. app-shell.tsx (lines 237-240): `<Footer />` wrapped in `hidden lg:block` — the logged-in user app panel. REMOVE.
+  3. admin-shell.tsx: NO footer (already clean from the Admin-Shell-Separation task). No change.
+  4. auth-screen.tsx (line 513): a minimal one-line `<footer>© 2026 NeighborX...</footer>` — gateway screen, not a panel. KEEP.
+- Edited app-shell.tsx (3 changes via MultiEdit):
+  1. Removed `import { Footer } from "./footer";` (now unused).
+  2. Updated the stale sidebar comment that referenced "footer top" → now references "page bottom" (no more footer to clamp against).
+  3. Replaced the `<div className="hidden lg:block"><Footer /></div>` block with a comment explaining panels are full-height app-like experiences (no footer); `<MobileTabBar />` stays for mobile.
+- Updated footer.tsx docstring: was "only rendered on lg+ screens (see app-shell.tsx)" → now "the marketing footer for the public landing page only. NOT rendered inside the app panel or admin console."
+- Lint: `bun run lint` → clean (0 errors, 0 warnings).
+- Local dev server: restarted with `unset DATABASE_URL DIRECT_DATABASE_URL` (sandbox shell exports stale SQLite URL that overrides .env — documented issue). Server compiled cleanly (HTTP 200 on /). Note: sandbox memory pressure kept killing the dev server under agent-browser load (documented issue), so full interactive verification was done on the stable Vercel live site instead.
+- Committed: "fix(ui): remove footer from app & admin panels (keep on landing page)" (commit 7a9e723, 2 files changed, 8 insertions, 9 deletions).
+- Pushed to GitHub via PAT credential helper (cecb1a7..7a9e723).
+- Deployed to Vercel: `vercel deploy --prod` → build 18s, deploy 40s, aliased https://neighborx.vercel.app.
+- Live verification via Agent Browser on https://neighborx.vercel.app:
+  1. Landing page (logged out): `document.querySelector('footer')` → "FOOTER PRESENT: NeighborX | Hyperlocal Community | The Digital Operating System..." ✅ (footer kept on marketing site).
+  2. Clicked "I already have an account" → auth screen → clicked "Arjun Deshmukh 👑 SUPER_ADMIN" → email auto-filled arjun@nx.in → clicked "Send login OTP" → demo OTP 873331 shown in UI → filled it → clicked "Login" → logged in.
+  3. App panel (logged in): `document.querySelector('footer')` → "NO FOOTER (correct!)" ✅. Sidebar + header + dashboard content render normally; no marketing footer at the bottom.
+  4. Clicked "Admin Console" button → AdminShell rendered → `document.querySelector('footer')` → "NO FOOTER (correct!)" ✅. Admin header ("Admin Console", Super Admin L10 badge, Back to App) present.
+  5. Clicked "Back to App" → returned to user app → footer still absent ✅.
+  6. Console errors: none. Console messages: none.
+  7. VLM screenshot analysis confirmed: app panel bottom shows dashboard metric cards with no footer; admin console bottom shows Recent Posts / New Users / Abuse Reports cards with no footer.
+- Saved verification screenshots: app-panel-no-footer.png, admin-panel-no-footer.png.
+
+Stage Summary:
+- ✅ Footer removed from the user app panel (app-shell.tsx) — panels are now full-height app-like experiences.
+- ✅ Admin console confirmed footer-free (was already clean).
+- ✅ Public landing page keeps its marketing footer (unchanged).
+- ✅ Auth screen keeps its minimal one-line copyright footer (gateway screen, not a panel).
+- ✅ Live on Vercel: https://neighborx.vercel.app — fully verified end-to-end (landing footer present, app panel no footer, admin console no footer, zero console errors).
+- Note: when in-app content is short (e.g. the dashboard's metric cards on a tall desktop viewport), there is now empty background space below the content instead of a footer capping it. This is standard app-shell behavior (Stripe, Vercel, GitHub dashboards all do this) and is the intended result of removing the footer per the user's request.
