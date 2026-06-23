@@ -31,6 +31,8 @@ import { Property } from "./modules/property";
 import { Society } from "./modules/society";
 import { Commerce } from "./modules/commerce";
 import { Reels } from "./modules/reels";
+import { YellowPages } from "./modules/yellow-pages";
+import { NeighborhoodSearch } from "./modules/search";
 import { AdminShell } from "./admin-shell";
 import { IamProvider, useIam } from "@/lib/iam/use-iam";
 import { cn } from "@/lib/utils";
@@ -124,6 +126,10 @@ export function AppShell({ user }: { user: User }) {
                 {active === "borrow" && <Borrow uid={uid} />}
                 {active === "skills" && <Skills uid={uid} />}
                 {active === "reels" && <Reels uid={uid} />}
+
+                {/* Phase 5 — Discovery layer */}
+                {active === "yellowpages" && <YellowPages uid={uid} />}
+                {active === "search" && <NeighborhoodSearch uid={uid} />}
               </div>
             </React.Suspense>
           </div>

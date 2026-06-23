@@ -89,6 +89,8 @@ model User {
   reels          Reel[]
   reelLikes      ReelLike[]
   reelComments   ReelComment[]
+  // Yellow Pages — hyperlocal directory (discovery layer)
+  yellowPages    YellowPageEntry[]
 }
 
 model Post {
@@ -909,4 +911,39 @@ model ReelComment {
   createdAt DateTime @default(now())
 
   @@index([reelId])
+}
+
+// =====================================================================
+// Hyperlocal Yellow Pages — neighborhood directory (Phase 5, discovery)
+// =====================================================================
+// Pure discovery layer: doctors, schools, electricians, restaurants,
+// police stations, temples, ambulances, etc. Strengthens local discovery
+// without adding a social feed — this is NOT another Instagram.
+model YellowPageEntry {
+  id          String   @id @default(cuid())
+  name        String
+  // category: HEALTHCARE | EDUCATION | HOME_SERVICES | BUSINESS | GOVERNMENT | RELIGIOUS | EMERGENCY
+  category    String
+  // subcategory e.g. "Doctors", "Schools", "Electricians", "Restaurants", "Police", "Temples", "Ambulance"
+  subcategory String
+  description String?
+  address     String
+  area        String   @default("Khair Nagar")
+  city        String   @default("Udgir")
+  phone       String?
+  email       String?
+  website     String?
+  // hours e.g. "9 AM - 9 PM" or "24x7"
+  hours       String?
+  imageUrl    String?
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  verified    Boolean  @default(false)
+  // optional: a user can "claim" this listing
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([category, subcategory])
+  @@index([city, area])
 }

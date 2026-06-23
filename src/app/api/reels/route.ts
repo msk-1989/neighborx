@@ -7,11 +7,33 @@ async function currentUser(req: Request) {
   return db.user.findFirst({ where: { OR: [{ id }, { email: id }] } });
 }
 
+/**
+ * GET /api/reels?uid=<id>
+ *
+ * Hyperlocal AI recommendation: reels are ranked by proximity to the viewer,
+ * NOT by global popularity (this is what keeps NeighborX neighborhood-first
+ * instead of becoming another Instagram).
+ *
+ * Ranking tiers (each tier sorted by recency within):
+ *   Tier 0 — same society  (e.g. Royal Residency)
+ *   Tier 1 — same area     (e.g. Khair Nagar)
+ *   Tier 2 — same city     (e.g. Udgir)
+ *   Tier 3 — nearby cities (everything else)
+ *
+ * Optional filters:
+ *   ?category=FOOD       — filter to a single category
+ *   ?following=true      — only reels from authors the viewer follows (TODO)
+ */
 export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const categoryFilter = url.searchParams.get("category");
   const user = await currentUser(req);
 
   const reels = await db.reel.findMany({
-    where: { status: "ACTIVE" },
+    where: {
+      status: "ACTIVE",
+      ...(categoryFilter ? { category: categoryFilter } : {}),
+    },
     include: {
       author: true,
       _count: { select: { reelComments: true } },
@@ -19,11 +41,30 @@ export async function GET(req: Request) {
         ? { where: { userId: user.id }, select: { id: true } }
         : false,
     },
+    // fetch a wider pool so the proximity sort has material to work with
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: 80,
   });
 
-  const payload = reels.map((r) => {
+  // ── Proximity ranking ──
+  // Lower tier = closer to viewer = shown first.
+  const tier = (authorSociety: string, authorArea: string, authorCity: string): number => {
+    if (!user) return 3;
+    if (authorSociety === user.society) return 0;
+    if (authorArea === user.area) return 1;
+    if (authorCity === user.city) return 2;
+    return 3;
+  };
+
+  const sorted = [...reels].sort((a, b) => {
+    const ta = tier(a.author.society, a.author.area, a.author.city);
+    const tb = tier(b.author.society, b.author.area, b.author.city);
+    if (ta !== tb) return ta - tb;
+    // within the same tier, newest first
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+  const payload = sorted.map((r) => {
     const { reelLikes, ...rest } = r;
     return {
       ...rest,

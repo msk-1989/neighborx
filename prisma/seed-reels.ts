@@ -68,44 +68,46 @@ async function main() {
 
   const specs: ReelSpec[] = [
     {
+      // 🏢 BUSINESS — local shop showcase
       videoUrl: VIDEOS[0],
       caption:
-        "Ganesh festival setup in our society 🙏 modak prasad for everyone tonight! Bappa moriya 🌸",
+        "Behind the scenes at Sharma Kirana Store 🏪 fresh stock arrived — daily essentials at best prices in Khair Nagar! Free home delivery above ₹500 🛵",
       music: "Arijit Singh — Tum Hi Ho",
-      hashtags: "ganesh,udgir,festival,society",
-      category: "FESTIVAL",
-      authorId: u.priya.id,
+      hashtags: "kirana,business,udgir,khairnagar,delivery",
+      category: "BUSINESS",
+      authorId: u.ravi.id,
       likes: 248,
       views: 4320,
       likedBy: ["arjun@nx.in", "sneha@nx.in", "mahesh@nx.in"],
       comments: [
-        { authorEmail: "arjun@nx.in", content: "Bappa moriya 🙏 modak khana bhejna bhai!" },
-        { authorEmail: "sneha@nx.in", content: "Society goals 🙌 decoration fire hai 🔥" },
+        { authorEmail: "arjun@nx.in", content: "Bhai 1kg toor dal price kya hai aaj?" },
+        { authorEmail: "sneha@nx.in", content: "Free delivery 🔥 order kar rahi hu" },
       ],
     },
     {
+      // 🏠 PROPERTY — walkthrough
       videoUrl: VIDEOS[1],
       caption:
-        "Morning walk at the lake — best part of living in Khair Nagar 🌅 sunrise hits different yahan",
-      music: "lata mangeshkar — lag ja gale",
-      hashtags: "morningroutine,nature,udgir,lake",
-      category: "NATURE",
-      authorId: u.ravi.id,
+        "2BHK walkthrough — Royal Residency Tower B, 3rd floor 🏠 semi-furnished, society pool view, ready to move in. DM for site visit 📞",
+      music: "Lata Mangeshkar — Lag Ja Gale",
+      hashtags: "2bhk,rent,royalresidency,udgir,property",
+      category: "PROPERTY",
+      authorId: u.priya.id,
       likes: 89,
       views: 1240,
       likedBy: ["arjun@nx.in", "anita@nx.in"],
       comments: [
-        { authorEmail: "anita@nx.in", content: "Subah subah motivation mil gaya 😍" },
-        { authorEmail: "arjun@nx.in", content: "Bhai next time muje bhi le jana 😄" },
-        { authorEmail: "sunita@nx.in", content: "Lake view 🔥 pure vibes" },
+        { authorEmail: "anita@nx.in", content: "Rent kitni hai didi?" },
+        { authorEmail: "arjun@nx.in", content: "Site visit sat ko chalega" },
       ],
     },
     {
+      // 🍔 FOOD — restaurant showcase
       videoUrl: VIDEOS[2],
       caption:
-        "Tried the new vada pav stall near Shivaji Chowk — 10/10 🔥 only ₹15 and chatni is next level",
+        "Tried the new vada pav stall near Shivaji Chowk — 10/10 🔥 only ₹15 and chatni is next level. Tagging @UdgirFoodies 🤤",
       music: "Vishal-Shekhar — Desi Girl",
-      hashtags: "streetfood,udgir,vadapav,foodie",
+      hashtags: "streetfood,udgir,vadapav,foodie,shivajichowk",
       category: "FOOD",
       authorId: u.mahesh.id,
       likes: 312,
@@ -117,28 +119,30 @@ async function main() {
       ],
     },
     {
+      // 🎥 COMMUNITY — society life
       videoUrl: VIDEOS[3],
       caption:
-        "DIY rangoli for Diwali using flower petals from our garden ✨ zero cost, full vibes #diwali",
+        "Society Swachh Bharat drive — 40+ neighbors turned up Saturday morning 🧹 our Royal Residency is spotless now! Community power 🙌",
       music: "Shreya Ghoshal — Deewani Mastani",
-      hashtags: "diwali,rangoli,diy,decoration",
-      category: "FESTIVAL",
+      hashtags: "swachhbharat,community,royalresidency,udgir",
+      category: "COMMUNITY",
       authorId: u.anita.id,
       likes: 174,
       views: 2980,
-      likedBy: ["sneha@nx.in", "sunita@nx.in"],
+      likedBy: ["sneha@nx.in", "sunita@nx.in", "arjun@nx.in"],
       comments: [
-        { authorEmail: "sunita@nx.in", content: "So pretty! Tutorial banao didi 🙏" },
+        { authorEmail: "sunita@nx.in", content: "Proud of our society 🙏 next drive kab hai?" },
         { authorEmail: "sneha@nx.in", content: "Society goals 🙌" },
       ],
     },
     {
+      // 🎉 EVENTS — society function
       videoUrl: VIDEOS[4],
       caption:
-        "Society cricket tournament finals — last ball six 🏏 MVP = our 12-yr-old neighbor Aarav 🔥",
+        "Society cricket tournament finals — last ball six 🏏 MVP = our 12-yr-old neighbor Aarav 🔥 trophy distribution Sunday 6pm @ clubhouse",
       music: "A.R. Rahman — Jai Ho",
-      hashtags: "cricket,society,tournament,udgir",
-      category: "EVENT",
+      hashtags: "cricket,society,tournament,udgir,event",
+      category: "EVENTS",
       authorId: u.vijay.id,
       likes: 198,
       views: 3650,
@@ -149,51 +153,54 @@ async function main() {
       ],
     },
     {
+      // 💼 JOBS — local hiring
       videoUrl: VIDEOS[5],
       caption:
-        "POV: when the society lift is finally repaired after 3 weeks 😂 comedy = waiting for it daily",
-      music: "Badshah —DJ Waley Babu",
-      hashtags: "comedy,society,relatable,udgir",
-      category: "COMEDY",
-      authorId: u.sunita.id,
+        "Hiring alert 💼 Mahesh Enterprises (Industrial Estate) needs 2 delivery boys + 1 accountant. Bike + license must. Salary ₹18k-25k. DM resume 📋",
+      music: "Badshah — DJ Waley Babu",
+      hashtags: "jobs,hiring,udgir,delivery,accountant",
+      category: "JOBS",
+      authorId: u.mahesh.id,
       likes: 267,
       views: 4920,
       likedBy: ["arjun@nx.in", "ravi@nx.in", "vijay@nx.in"],
       comments: [
-        { authorEmail: "ravi@nx.in", content: "Haha exactly my daily struggle 😂😂" },
-        { authorEmail: "arjun@nx.in", content: "Bhai next time muje bhi le jana 😄" },
-        { authorEmail: "anita@nx.in", content: "Looking great! 🔥" },
+        { authorEmail: "ravi@nx.in", content: "Accountant post ke liye apply karna hai 🙏" },
+        { authorEmail: "vijay@nx.in", content: "Part time option hai kya bhai?" },
       ],
     },
     {
+      // 📢 ANNOUNCEMENTS — lost & found
       videoUrl: VIDEOS[6],
       caption:
-        "Quick tip: segregate wet and dry waste at home — society swachh bharat drive starts Monday 🌱",
+        "LOST 🐕 brown Labrador named 'Sheru' near Hanuman Temple yesterday evening. Red collar, responds to name. Reward ₹2000. Please DM if found 🙏",
       music: "Salim-Sulaiman — Aaj Ki Raat",
-      hashtags: "swachhbharat,tips,society,environment",
-      category: "TIPS",
+      hashtags: "lost,lostfound,udgir,sheru,dog,hanumantemple",
+      category: "ANNOUNCEMENTS",
       authorId: u.arjun.id,
-      likes: 56,
-      views: 780,
-      likedBy: ["priya@nx.in", "sneha@nx.in"],
+      likes: 156,
+      views: 2780,
+      likedBy: ["priya@nx.in", "sneha@nx.in", "sunita@nx.in"],
       comments: [
-        { authorEmail: "priya@nx.in", content: "Great initiative Arjun 🙏 will share in society group" },
+        { authorEmail: "priya@nx.in", content: "Sharing in all society groups 🙏 Sheru mil jayega" },
+        { authorEmail: "sunita@nx.in", content: "Subah temple ke paas dekha tha kisi ko 😟" },
       ],
     },
     {
+      // 📢 ANNOUNCEMENTS — traffic update
       videoUrl: VIDEOS[7],
       caption:
-        "Evening aarti at Ganesh mandal — full society gathered, pandal decoration this year is 🔥🔥",
+        "TRAFFIC UPDATE ⚠️ Midc Road flyover repair work — diversions till Friday. Two-wheelers use Latur Road bypass. Plan your commute 🚧",
       music: "Arijit Singh — Kabira",
-      hashtags: "ganesh,aarti,community,udgir,festival",
-      category: "COMMUNITY",
+      hashtags: "traffic,alert,udgir,midcroad,announcement",
+      category: "ANNOUNCEMENTS",
       authorId: u.sneha.id,
       likes: 142,
       views: 2180,
       likedBy: ["arjun@nx.in", "priya@nx.in", "anita@nx.in"],
       comments: [
-        { authorEmail: "anita@nx.in", content: "Pandal decoration next level hai 🙌" },
-        { authorEmail: "priya@nx.in", content: "Aaj 7 baje aarti 😍 coming!" },
+        { authorEmail: "anita@nx.in", content: "Thanks for the heads up 🙏 office ke liye nikalna padega jaldi" },
+        { authorEmail: "priya@nx.in", content: "School bus route bhi change hua kya?" },
       ],
     },
   ];

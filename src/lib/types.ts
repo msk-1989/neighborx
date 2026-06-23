@@ -24,9 +24,12 @@ export type ModuleKey =
   | "carpool"
   | "borrow"
   | "commerce"
-  | "reels"   // Phase 5 — Instagram-style short videos
   | "volunteer"
   | "skills"
+  // Phase 5 — Discovery layer (neighborhood-first, not a social feed)
+  | "reels"        // Instagram-style HYPERLOCAL short videos
+  | "yellowpages"  // Hyperlocal Yellow Pages directory
+  | "search"       // Neighborhood search engine (unified)
   // Admin (Super Admin panel — only visible to users with VIEW_ADMIN_PANEL)
   | "admin";
 
@@ -564,4 +567,68 @@ export interface ReelComment {
   authorId: string;
   author: User;
   createdAt: string;
+}
+
+// =====================================================================
+// Phase 5 — Hyperlocal Yellow Pages (discovery directory)
+// =====================================================================
+
+export type YellowPageCategory =
+  | "HEALTHCARE"
+  | "EDUCATION"
+  | "HOME_SERVICES"
+  | "BUSINESS"
+  | "GOVERNMENT"
+  | "RELIGIOUS"
+  | "EMERGENCY";
+
+export interface YellowPageEntry {
+  id: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  description?: string | null;
+  address: string;
+  area: string;
+  city: string;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  hours?: string | null;
+  imageUrl?: string | null;
+  rating: number;
+  reviewCount: number;
+  verified: boolean;
+  ownerId?: string | null;
+  createdAt: string;
+}
+
+// =====================================================================
+// Phase 5 — Neighborhood Search Engine (unified search results)
+// =====================================================================
+
+export interface SearchResult<T = unknown> {
+  type:
+    | "post"
+    | "business"
+    | "reel"
+    | "job"
+    | "property"
+    | "service"
+    | "yellowpage"
+    | "marketplace";
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+  href?: string;
+  data: T;
+}
+
+export interface SearchResponse {
+  query: string;
+  total: number;
+  results: SearchResult[];
+  /** counts per type, for the UI tabs */
+  counts: Record<SearchResult["type"], number>;
 }

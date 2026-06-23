@@ -29,6 +29,9 @@ import {
   GraduationCap,
   // Phase 5 — Reels
   Clapperboard,
+  // Phase 5 — Discovery (Yellow Pages + Search)
+  BookOpen,
+  Search as SearchIcon,
   // Admin
   Crown,
 } from "lucide-react";
@@ -38,7 +41,7 @@ export interface ModuleDef {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   desc: string;
-  group: "home" | "community" | "trust" | "safety" | "commerce" | "civic" | "ai" | "you" | "coming-soon" | "admin";
+  group: "home" | "community" | "trust" | "safety" | "commerce" | "civic" | "ai" | "discovery" | "you" | "coming-soon" | "admin";
   /** Product roadmap phase — drives the "Phase N" badge in the sidebar */
   phase: 1 | 2 | 3 | 4;
   /** If true, module is a placeholder with no implementation yet */
@@ -97,6 +100,10 @@ export const MODULES: ModuleDef[] = [
   // ── Phase 5: Reels (Instagram-style short videos) ──
   { key: "reels", label: "Reels", icon: Clapperboard, desc: "Neighborhood short videos", group: "community", phase: 4 },
 
+  // ── Phase 5: Discovery layer (neighborhood-first, not a social feed) ──
+  { key: "yellowpages", label: "Yellow Pages", icon: BookOpen, desc: "Hyperlocal directory — doctors, schools, services", group: "discovery", phase: 4 },
+  { key: "search", label: "Search", icon: SearchIcon, desc: "Search posts, businesses, reels & more", group: "discovery", phase: 4 },
+
   // NOTE: The Admin Console is NO LONGER a sidebar tab. It is a completely
   // separate shell (AdminShell) accessed via the "Admin Console" button in
   // the Header (visible only to admin-role users). See admin-shell.tsx.
@@ -110,6 +117,7 @@ export const GROUP_LABELS: Record<ModuleDef["group"], string> = {
   commerce: "Commerce",
   civic: "Civic",
   ai: "AI",
+  discovery: "Discovery",
   you: "",
   "coming-soon": "Coming Soon · Roadmap",
   admin: "Administration",
@@ -118,6 +126,7 @@ export const GROUP_LABELS: Record<ModuleDef["group"], string> = {
 // Order in which groups appear in the sidebar
 export const GROUP_ORDER: ModuleDef["group"][] = [
   "home",
+  "discovery",
   "community",
   "safety",
   "trust",

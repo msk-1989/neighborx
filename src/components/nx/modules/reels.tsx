@@ -47,15 +47,23 @@ import { toast } from "sonner";
 // (Tailwind v4 doesn't ship a slow spin by default; use a 8s linear infinite.)
 const SPIN_CLASS = "animate-[spin_8s_linear_infinite]";
 
+/**
+ * Hyperlocal Reel categories.
+ *
+ * NeighborX Reels are NOT global reels like Instagram — they are scoped to
+ * your neighborhood. These categories reinforce the "neighborhood-first"
+ * product principle: every category maps to a local-discovery use case
+ * (showcase a local restaurant, walkthrough a property, clip a society
+ * event, announce a lost-and-found, etc.).
+ */
 const REEL_CATEGORIES = [
-  "COMMUNITY",
-  "EVENT",
-  "FOOD",
-  "FESTIVAL",
-  "NATURE",
-  "COMEDY",
-  "TIPS",
-  "OTHER",
+  "COMMUNITY",     // 🎥 society updates, neighborhood life
+  "BUSINESS",      // 🏢 local shop / business promotions
+  "FOOD",          // 🍔 restaurant showcases, street food
+  "PROPERTY",      // 🏠 property walkthroughs, rent/sell tours
+  "JOBS",          // 💼 local job openings, hiring reels
+  "EVENTS",        // 🎉 school functions, society events, festivals
+  "ANNOUNCEMENTS", // 📢 lost & found, traffic, emergency alerts
 ] as const;
 
 function initialsOf(name: string): string {
@@ -92,6 +100,7 @@ export function Reels({ uid }: { uid: string }) {
   const [error, setError] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [muted, setMuted] = React.useState(true);
+  const [categoryFilter, setCategoryFilter] = React.useState<string | null>(null);
 
   // sheet states
   const [commentsReelId, setCommentsReelId] = React.useState<string | null>(null);
@@ -108,15 +117,17 @@ export function Reels({ uid }: { uid: string }) {
     setLoading(true);
     setError(false);
     try {
-      const data = await api<Reel[]>(`/api/reels?uid=${uid}`);
+      const qs = categoryFilter ? `&category=${categoryFilter}` : "";
+      const data = await api<Reel[]>(`/api/reels?uid=${uid}${qs}`);
       setReels(data);
+      setActiveIndex(0);
     } catch {
       setError(true);
       toast.error("Could not load reels");
     } finally {
       setLoading(false);
     }
-  }, [uid]);
+  }, [uid, categoryFilter]);
 
   React.useEffect(() => {
     load();
@@ -409,12 +420,44 @@ export function Reels({ uid }: { uid: string }) {
       `}</style>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-background/85 px-4 py-2.5 backdrop-blur">
-        <h1 className="text-lg font-bold">Reels</h1>
-        <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          Create
-        </Button>
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <h1 className="text-lg font-bold">Reels</h1>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Create
+          </Button>
+        </div>
+        {/* Hyperlocal category filter chips */}
+        <div className="nx-scrollbar-thin flex gap-1.5 overflow-x-auto px-4 pb-2">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter(null)}
+            className={cn(
+              "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              categoryFilter === null
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/70",
+            )}
+          >
+            All
+          </button>
+          {REEL_CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategoryFilter(c)}
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                categoryFilter === c
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70",
+              )}
+            >
+              {c.charAt(0) + c.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scroll container — fills viewport height minus header */}
