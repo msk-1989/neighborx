@@ -1,18 +1,18 @@
 // NeighborX — Hyperlocal Community & Commerce Super App
-// Portable schema: runs on SQLite locally and PostgreSQL (Neon) on Vercel.
-// Uses String for enum-like fields (no native PG enums) and no arrays —
-// keeps the schema portable across both providers.
+// PostgreSQL-backed (Neon serverless). Uses String for enum-like fields
+// (no native PG enums) and no arrays — keeps the schema portable.
 //
-// The committed provider is "sqlite" for local dev. The Vercel build runs
-// scripts/vercel-prebuild.sh which rewrites it to "postgresql" when
-// DATABASE_PROVIDER=postgresql is set in the Vercel environment.
+// Both local dev and Vercel production use PostgreSQL (Neon). A single
+// DATABASE_URL (Neon pooled) + DIRECT_DATABASE_URL (Neon direct) drive
+// everything, so the generated Prisma client is always a postgres client —
+// no provider swapping needed.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
