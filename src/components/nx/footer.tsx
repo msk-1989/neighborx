@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 
 /**
- * Footer — only rendered on lg+ screens (see app-shell.tsx).
- * Mobile users get the bottom tab bar instead.
+ * Footer — the marketing footer for the public landing page only.
+ * NOT rendered inside the app panel or admin console (those are
+ * full-height app-like experiences — see app-shell.tsx / admin-shell.tsx).
  *
  * Layout: 12-col grid on lg, brand column spans 5, three link columns
  * span 7 together. Bottom bar has a divider + copyright + location row.

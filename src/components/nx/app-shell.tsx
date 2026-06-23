@@ -4,7 +4,6 @@ import * as React from "react";
 import { useNX } from "@/lib/store";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
-import { Footer } from "./footer";
 import { MobileTabBar } from "./mobile-tab-bar";
 import { MODULES } from "./modules-config";
 import { Dashboard } from "./modules/dashboard";
@@ -55,8 +54,8 @@ export function AppShell({ user }: { user: User }) {
         {/* desktop sidebar — definite height (viewport minus header) so the inner
             ScrollArea gets a bounded height and scrolls. sticky top-16 keeps it
             pinned while the flex row is in view; sticky clamping ensures the
-            aside's bottom never passes its containing block's bottom (= footer
-            top), so there is NO sidebar↔footer overlap. overflow-hidden clips
+            aside's bottom never passes its containing block's bottom, so there
+            is NO sidebar overlap with the page bottom. overflow-hidden clips
             the inner scroll; the ScrollArea inside handles scrolling. */}
         <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start overflow-hidden border-r lg:block lg:top-16 lg:h-[calc(100dvh-4rem)]">
           <Sidebar uid={uid} />
@@ -234,10 +233,9 @@ export function AppShell({ user }: { user: User }) {
           </div>
         </main>
       </div>
-      {/* Footer hidden on mobile (bottom tab bar replaces it). Visible on lg+. */}
-      <div className="hidden lg:block">
-        <Footer />
-      </div>
+      {/* No footer in the app panel — it's a full-height app-like experience.
+          The marketing footer lives only on the public landing page.
+          Mobile users get the bottom tab bar instead. */}
       <MobileTabBar />
     </div>
     )}
