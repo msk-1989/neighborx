@@ -25,6 +25,9 @@ interface NXState {
   chatRoom: string;
   openChat: (room: string) => void;
   closeChat: () => void;
+  // admin console view switch — NOT persisted (always boot into user app)
+  adminView: boolean;
+  setAdminView: (v: boolean) => void;
 }
 
 export const useNX = create<NXState>()(
@@ -49,6 +52,8 @@ export const useNX = create<NXState>()(
       chatRoom: "general",
       openChat: (room) => set({ chatOpen: true, chatRoom: room }),
       closeChat: () => set({ chatOpen: false }),
+      adminView: false,
+      setAdminView: (v) => set({ adminView: v }),
     }),
     {
       name: "neighborx-store",

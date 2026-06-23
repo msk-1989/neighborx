@@ -24,13 +24,14 @@ import { Profile } from "./modules/profile";
 import { Reputation } from "./modules/reputation";
 import { NeighborhoodWatch } from "./modules/neighborhood-watch";
 import { ComingSoon } from "./modules/coming-soon";
-import { AdminPanel } from "./modules/admin-panel";
-import { IamProvider } from "@/lib/iam/use-iam";
+import { AdminShell } from "./admin-shell";
+import { IamProvider, useIam } from "@/lib/iam/use-iam";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 export function AppShell({ user }: { user: User }) {
   const active = useNX((s) => s.activeModule);
+  const adminView = useNX((s) => s.adminView);
   const uid = user.id;
   const mod = MODULES.find((m) => m.key === active);
   const Icon = mod?.icon;
@@ -44,6 +45,10 @@ export function AppShell({ user }: { user: User }) {
 
   return (
     <IamProvider uid={uid} initialRoles={["RESIDENT"]}>
+    <AdminGate user={user} adminView={adminView}>
+    {(showAdmin) => showAdmin ? (
+      <AdminShell user={user} />
+    ) : (
     <div className="flex min-h-screen-dvh flex-col bg-background">
       <Header user={user} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1">
@@ -61,9 +66,9 @@ export function AppShell({ user }: { user: User }) {
         <main className="min-w-0 flex-1">
           <div className={cn(
             "mx-auto px-3 py-4 pb-tab-bar sm:px-5 sm:py-5 lg:pb-8",
-            active === "admin" ? "max-w-7xl" : "max-w-5xl",
+            "max-w-5xl",
           )}>
-            {!isDashboard && !mod?.comingSoon && active !== "admin" && (
+            {!isDashboard && !mod?.comingSoon && (
               <div className="mb-4 hidden items-center gap-3 sm:flex">
                 {Icon && (
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -224,9 +229,6 @@ export function AppShell({ user }: { user: User }) {
                     ]}
                   />
                 )}
-
-                {/* Admin Panel — Super Admin control center (RBAC-gated) */}
-                {active === "admin" && <AdminPanel uid={uid} />}
               </div>
             </React.Suspense>
           </div>
@@ -238,6 +240,25 @@ export function AppShell({ user }: { user: User }) {
       </div>
       <MobileTabBar />
     </div>
+    )}
+    </AdminGate>
     </IamProvider>
   );
+}
+
+/**
+ * Gate that decides whether to show the AdminShell or the user app.
+ * If adminView is true AND the user is an admin, show AdminShell.
+ * Otherwise show the user app.
+ */
+function AdminGate({ user, adminView, children }: {
+  user: User;
+  adminView: boolean;
+  children: (showAdmin: boolean) => React.ReactNode;
+}) {
+  const iam = useIam();
+  // Only show admin shell if: adminView toggle is on AND user is actually an admin
+  // AND IAM has finished loading (so we don't flash the admin shell prematurely)
+  const showAdmin = adminView && iam.isAdmin && !iam.loading;
+  return <>{children(showAdmin)}</>;
 }

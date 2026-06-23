@@ -43,9 +43,8 @@ export const metadata: Metadata = {
     "India",
   ],
   authors: [{ name: "NeighborX" }],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
+  // Favicon is generated from src/app/icon.svg (the NeighborX house logo on
+  // the brand emerald→amber gradient). No external icon URL needed.
   openGraph: {
     title: "NeighborX — Hyperlocal Community Super App",
     description:

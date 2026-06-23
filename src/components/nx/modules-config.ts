@@ -92,8 +92,9 @@ export const MODULES: ModuleDef[] = [
   { key: "borrow", label: "Borrow & Lend", icon: PackageOpen, desc: "Books, tools, equipment sharing", group: "coming-soon", phase: 4, comingSoon: true },
   { key: "skills", label: "Skill Exchange", icon: GraduationCap, desc: "Language, music, computer training", group: "coming-soon", phase: 4, comingSoon: true },
 
-  // ── Admin (Super Admin panel — only visible to users with VIEW_ADMIN_PANEL permission) ──
-  { key: "admin", label: "Admin Panel", icon: Crown, desc: "Full platform control center", group: "admin", phase: 1 },
+  // NOTE: The Admin Console is NO LONGER a sidebar tab. It is a completely
+  // separate shell (AdminShell) accessed via the "Admin Console" button in
+  // the Header (visible only to admin-role users). See admin-shell.tsx.
 ];
 
 export const GROUP_LABELS: Record<ModuleDef["group"], string> = {
@@ -119,7 +120,6 @@ export const GROUP_ORDER: ModuleDef["group"][] = [
   "civic",
   "ai",
   "coming-soon",
-  "admin",
 ];
 
 export const PHASE_LABELS: Record<number, string> = {

@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
@@ -119,7 +118,7 @@ interface AdminRole {
 // ============================================================================
 // Tab definitions
 // ============================================================================
-const TABS = [
+export const ADMIN_TABS = [
   { key: "overview", label: "Overview", icon: LayoutDashboard, desc: "Platform-wide snapshot" },
   { key: "users", label: "Users", icon: Users, desc: "Manage user accounts & roles" },
   { key: "community", label: "Community", icon: Newspaper, desc: "Moderate feed posts" },
@@ -138,7 +137,7 @@ const TABS = [
   { key: "settings", label: "Settings", icon: SettingsIcon, desc: "Locations, categories, CMS, roles" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+export type AdminTabKey = (typeof ADMIN_TABS)[number]["key"];
 
 // ============================================================================
 // Reusable bits
@@ -277,67 +276,28 @@ async function callAdmin(url: string, init?: RequestInit) {
 }
 
 // ============================================================================
-// Main component
+// Main content component — renders the active admin section.
+// The AdminShell provides the sidebar (role-scoped) and passes activeTab.
 // ============================================================================
-export function AdminPanel({ uid }: { uid: string }) {
-  const [tab, setTab] = React.useState<TabKey>("overview");
-
+export function AdminPanelContent({ activeTab, uid }: { activeTab: AdminTabKey; uid: string }) {
   return (
-    <div className="space-y-4">
-      {/* Banner */}
-      <Card className="brand-gradient border-0 p-5 text-white shadow-md">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/15 backdrop-blur">
-              <Crown className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-lg font-extrabold leading-tight">Super Admin Panel</h1>
-              <p className="text-xs text-white/80">NeighborX control center · 16 modules · IAM-secured</p>
-            </div>
-          </div>
-          <Badge className="gap-1 self-start bg-white/15 text-white sm:self-auto">
-            <ShieldCheck className="h-3 w-3" /> Full access
-          </Badge>
-        </div>
-      </Card>
-
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="flex flex-col gap-4 lg:flex-row">
-        <TabsList className="no-scrollbar h-auto w-full gap-1 overflow-x-auto p-1 lg:w-56 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            return (
-              <TabsTrigger
-                key={t.key}
-                value={t.key}
-                className="tap-feedback justify-start gap-2 px-3 py-2 text-sm lg:w-full"
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{t.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        <div className="min-w-0 flex-1 space-y-4">
-          <TabsContent value="overview"><OverviewSection uid={uid} /></TabsContent>
-          <TabsContent value="users"><UsersSection uid={uid} /></TabsContent>
-          <TabsContent value="community"><CommunitySection uid={uid} /></TabsContent>
-          <TabsContent value="trust"><TrustSection uid={uid} /></TabsContent>
-          <TabsContent value="marketplace"><MarketplaceSection uid={uid} /></TabsContent>
-          <TabsContent value="businesses"><BusinessesSection uid={uid} /></TabsContent>
-          <TabsContent value="services"><ServicesSection uid={uid} /></TabsContent>
-          <TabsContent value="jobs"><JobsSection uid={uid} /></TabsContent>
-          <TabsContent value="property"><PropertySection /></TabsContent>
-          <TabsContent value="safety"><SafetySection uid={uid} /></TabsContent>
-          <TabsContent value="society"><SocietySection uid={uid} /></TabsContent>
-          <TabsContent value="civic"><CivicSection uid={uid} /></TabsContent>
-          <TabsContent value="finance"><FinanceSection uid={uid} /></TabsContent>
-          <TabsContent value="compliance"><ComplianceSection uid={uid} /></TabsContent>
-          <TabsContent value="support"><SupportSection uid={uid} /></TabsContent>
-          <TabsContent value="settings"><SettingsSection uid={uid} /></TabsContent>
-        </div>
-      </Tabs>
+    <div className="min-w-0 flex-1 space-y-4">
+      {activeTab === "overview" && <OverviewSection uid={uid} />}
+      {activeTab === "users" && <UsersSection uid={uid} />}
+      {activeTab === "community" && <CommunitySection uid={uid} />}
+      {activeTab === "trust" && <TrustSection uid={uid} />}
+      {activeTab === "marketplace" && <MarketplaceSection uid={uid} />}
+      {activeTab === "businesses" && <BusinessesSection uid={uid} />}
+      {activeTab === "services" && <ServicesSection uid={uid} />}
+      {activeTab === "jobs" && <JobsSection uid={uid} />}
+      {activeTab === "property" && <PropertySection />}
+      {activeTab === "safety" && <SafetySection uid={uid} />}
+      {activeTab === "society" && <SocietySection uid={uid} />}
+      {activeTab === "civic" && <CivicSection uid={uid} />}
+      {activeTab === "finance" && <FinanceSection uid={uid} />}
+      {activeTab === "compliance" && <ComplianceSection uid={uid} />}
+      {activeTab === "support" && <SupportSection uid={uid} />}
+      {activeTab === "settings" && <SettingsSection uid={uid} />}
     </div>
   );
 }

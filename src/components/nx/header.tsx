@@ -22,7 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, Menu, Moon, Sun, MapPin, ChevronDown, Globe2, LogOut, UserCircle2, Sparkles, ShieldCheck } from "lucide-react";
+import { Bell, Menu, Moon, Sun, MapPin, ChevronDown, Globe2, LogOut, UserCircle2, Sparkles, ShieldCheck, Crown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Sidebar } from "./sidebar";
 import { Logo } from "./logo";
@@ -32,6 +32,7 @@ import { api } from "@/lib/api";
 import type { Notification, User } from "@/lib/types";
 import { timeAgo } from "@/lib/types";
 import { toast } from "sonner";
+import { useIam } from "@/lib/iam/use-iam";
 
 const SCOPES = [
   { key: "SOCIETY", label: "My Society", range: "0–500m" },
@@ -41,6 +42,8 @@ const SCOPES = [
 
 export function Header({ user }: { user: User }) {
   const { theme, setTheme } = useTheme();
+  const iam = useIam();
+  const setAdminView = useNX((s) => s.setAdminView);
   const [mounted, setMounted] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const nb = useNX((s) => s.neighborhood);
@@ -184,6 +187,19 @@ export function Header({ user }: { user: User }) {
         </div>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          {/* Admin Console button — visible only to admin-role users */}
+          {iam.isAdmin && !iam.loading && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setAdminView(true)}
+              className="gap-1.5 bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white hover:from-fuchsia-700 hover:to-fuchsia-800"
+            >
+              <Crown className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Admin Console</span>
+            </Button>
+          )}
+
           {/* notifications */}
           <Popover open={notifOpen} onOpenChange={setNotifOpen}>
             <PopoverTrigger asChild>
