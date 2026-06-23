@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Real-time neighborhood chat mini-service for NeighborX (socket.io on port 3003)",
+  "description": "Real-time neighborhood chat mini-service for NeighborX (socket.io). Reads PORT from env (default 3003) so it runs locally and on Render/Railway/Fly.",
   "scripts": {
     "dev": "bun --hot index.ts",
     "start": "bun index.ts"

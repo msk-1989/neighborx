@@ -51,7 +51,15 @@ export function CommunityChat({ user }: { user: User }) {
     let demoTimer: ReturnType<typeof setTimeout> | undefined;
     let pollTimer: ReturnType<typeof setInterval> | undefined;
 
-    const socket = io("/?XTransformPort=3003", {
+    // Connect to the socket.io chat service.
+    // - Local sandbox (gateway): NEXT_PUBLIC_CHAT_SERVICE_URL is unset, so we
+    //   use the relative "/" path with XTransformPort=3003 — the Caddy gateway
+    //   forwards it to the mini-service on port 3003.
+    // - Vercel/external: set NEXT_PUBLIC_CHAT_SERVICE_URL to the hosted chat
+    //   service URL (e.g. https://neighborx-chat.onrender.com) and we connect
+    //   to it directly (cross-origin).
+    const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_SERVICE_URL;
+    const socket = io(chatServiceUrl ?? "/?XTransformPort=3003", {
       query: { roomId: room },
       transports: ["websocket", "polling"],
       timeout: 4000,

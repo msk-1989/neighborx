@@ -3,21 +3,31 @@
  * ---------------------------
  * Real-time neighborhood chat via socket.io.
  *
- * - Fixed port: 3003 (hardcoded, no PORT env)
- * - Default socket.io path: "/" (do NOT customize — the Next.js frontend
- *   connects via the gateway with `io("/?XTransformPort=3003")`)
- * - CORS: allow all origins (the Next.js app connects through the gateway)
+ * - Port: reads `PORT` env var, defaults to 3003.
+ *   - Local sandbox dev: 3003 (the Caddy gateway forwards to it via
+ *     `XTransformPort=3003`).
+ *   - External hosting (Render/Railway/Fly): the platform sets PORT
+ *     automatically; point the frontend at the deployed URL via
+ *     NEXT_PUBLIC_CHAT_SERVICE_URL.
+ * - Default socket.io path: "/socket.io/" (do NOT customize — keeps the
+ *   frontend connection string simple).
+ * - CORS: allow all origins.
  * - Health check: GET / -> { ok: true, service: "neighborx-chat" }
  *
- * Connection string (frontend):
- *   io("/?XTransformPort=3003")
+ * Frontend connection:
+ *   - Local sandbox:  io("/?XTransformPort=3003")
+ *   - Vercel/external: io(process.env.NEXT_PUBLIC_CHAT_SERVICE_URL)
+ *   (The frontend component handles this automatically — see
+ *    src/components/nx/modules/community-chat.tsx.)
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { Server, type Socket } from "socket.io";
 
 // --- Configuration ---------------------------------------------------------
-const PORT = 3003; // fixed, per task spec — do not read from env
+// Local sandbox default is 3003 (matches the gateway config). External hosts
+// (Render/Railway/Fly) inject PORT automatically.
+const PORT = Number(process.env.PORT) || 3003;
 
 // --- HTTP server (for the health-check endpoint) ---------------------------
 const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
