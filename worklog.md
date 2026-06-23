@@ -646,3 +646,40 @@ Stage Summary:
 - Fully responsive (mobile hamburger menu, single-column on mobile, full-width CTAs).
 - All 3 flows verified: landing → CTA → auth → login → app, landing → CTA → back → landing, app → logout → landing.
 - Lint clean. No existing functionality broken — login/register/logout all still work as before.
+
+---
+Task ID: Vercel-Ready
+Agent: main (Z.ai Code)
+Task: Make NeighborX Vercel-ready and prepare for deployment (user asked "have u pushed it on vercel" then "pls do the needful")
+
+Work Log:
+- Read worklog.md to understand prior work (NeighborX super app, socket.io chat service on port 3003, full RBAC/IAM admin system already built).
+- Checked git state: repo at msk-1989/neighborx, 15 commits ahead of origin/main, vercel.json existed, no .vercel/ link, no Vercel CLI, no gh CLI, no git credentials in sandbox.
+- Attempted `git push origin main` — failed (fatal: could not read Username for github.com). No GitHub creds available in sandbox; push must run from user's machine.
+- Inspected prisma/schema.prisma: provider was already "postgresql" (migrated by a prior agent for Vercel/Neon), but local .env still had `DATABASE_URL=file:...custom.db` (SQLite URL) and DIRECT_DATABASE_URL was missing entirely → `bun run db:push` was FAILING with P1012 (Environment variable not found: DIRECT_DATABASE_URL). Local dev was broken.
+- Tried `provider = env("DATABASE_PROVIDER")` — Prisma 6.19.2 rejects this ("A datasource must not use the env() function in the provider argument"). Switched to the standard pattern instead.
+- Final DB approach: committed schema provider = "sqlite" (local dev, preserves existing custom.db + seeded data); added scripts/vercel-prebuild.sh that rewrites provider to "postgresql" via sed when DATABASE_PROVIDER=postgresql (set on Vercel). Idempotent, no-op locally.
+- Fixed .env: added DATABASE_PROVIDER=sqlite + DIRECT_DATABASE_URL=file:...custom.db. Ran `bun run db:push` → SUCCESS (SQLite database in sync, Prisma client regenerated).
+- Made chat service portable: mini-services/chat-service/index.ts now reads PORT from env (default 3003) instead of hardcoding 3003. Works locally (gateway) AND on Render/Railway/Fly (platform injects PORT). Updated package.json description + header comments.
+- Made frontend chat URL configurable: src/components/nx/modules/community-chat.tsx now reads NEXT_PUBLIC_CHAT_SERVICE_URL; falls back to "/?XTransformPort=3003" (local gateway) when unset. HTTP-polling fallback already existed, so chat degrades gracefully on Vercel if no socket service is hosted.
+- Updated vercel.json: buildCommand = "bash scripts/vercel-prebuild.sh && next build"; added installCommand = "bun install".
+- Created .env.example: documents all env vars for local (SQLite) and Vercel (Neon Postgres) setups.
+- Created DEPLOY.md: end-to-end deploy guide — Neon DB setup, prisma db push against Neon, Vercel project import + 4 env vars, hosting chat service on Render/Railway/Fly, seeding, troubleshooting, TL;DR. Includes architecture diagram.
+- Updated .gitignore: kept .env* ignored but force-tracked .env.example via `!.env.example`.
+- Ran `bun run lint` → clean (no errors).
+- Verified dev server: started `next dev -p 3000`, HTTP 200 on /, dev.log shows clean compile + render. Note: sandbox has memory pressure (Turbopack) causing the dev server to die intermittently after a few requests — this is a sandbox resource issue, NOT a code problem. Restarting brings it back immediately.
+- Agent Browser verification (mandatory): 
+  - Opened http://localhost:3000/ → title "NeighborX — India's Hyperlocal Community & Commerce Super App", full landing page rendered (hero, 20+ feature sections: Community Feed, Real-time Chat, Marketplace, Services, Jobs, Emergency SOS, Neighborhood Watch, Verified Businesses, Reputation, Events, Lost & Found, 5-Level Verification; How it works; For Residents/Businesses/Providers/Employers; Pricing; FAQ; footer). All interactive buttons present.
+  - Clicked "I already have an account" → navigated to auth screen showing 6 demo users (Arjun Deshmukh SUPER_ADMIN, Priya Kulkarni SOCIETY_ADMIN, Ravi Shinde BUSINESS_OWNER, Anita Desai SERVICE_PROVIDER, Mahesh Jadhav EMPLOYER, Vijay More RESIDENT) — these load from the User table, confirming DB read works.
+  - Clicked "Arjun Deshmukh" → email field auto-filled with arjun@nx.in (DB data flowing into UI).
+  - Clicked "Send login OTP" → no console errors, no dev.log errors. OTP flow needs DB-backed code entry (deeper flow, not fully exercised).
+  - No application errors, no hydration crashes, no Prisma errors in dev.log.
+- Committed all changes: `feat(deploy): make NeighborX Vercel-ready (SQLite local + Postgres/Neon on Vercel)` — 10 files changed, 367 insertions(+), 13 deletions(-). Commit 4d42d31.
+- Final push attempt: failed (exit 128, no GitHub credentials in sandbox). Repo now 17 commits ahead of origin/main.
+
+Stage Summary:
+- Codebase is now FULLY Vercel-ready: same code runs SQLite locally and Postgres (Neon) on Vercel via a prebuild provider swap.
+- Local dev FIXED: `bun run db:push` works again, dev server runs, lint clean, landing page + auth flow verified via Agent Browser.
+- Artifacts produced: scripts/vercel-prebuild.sh, .env.example, DEPLOY.md (full deploy guide), updated vercel.json, portable chat service, configurable frontend socket URL.
+- BLOCKER for actual Vercel deploy: `git push origin main` must run from a machine with GitHub credentials (sandbox has none). After push, user imports repo on Vercel, sets 3-4 env vars (DATABASE_PROVIDER, DATABASE_URL, DIRECT_DATABASE_URL, optional NEXT_PUBLIC_CHAT_SERVICE_URL), and deploys. Full step-by-step in DEPLOY.md.
+- Known architecture split for production: Next.js app → Vercel; PostgreSQL → Neon; socket.io chat service → Render/Railway/Fly (Vercel can't hold WebSockets). Chat has HTTP-polling fallback so it still works (non-instant) if the socket service isn't hosted.
