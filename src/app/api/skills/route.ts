@@ -54,3 +54,5 @@ export async function POST(req: Request) {
   });
   return NextResponse.json(item);
 }
+
+// Force rebuild — Vercel was not picking up this route.
